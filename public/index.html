@@ -155,6 +155,7 @@
       <option value="مشغول">🔴 مشغول</option>
       <option value="غایب">🌙 غایب</option>
     </select>
+    <div style="margin-bottom:16px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">🎨 تم رنگی:</div><div class="theme-picker" id="themeColors"></div></div>
     <div class="modal-actions">
       <button class="auth-btn" onclick="saveProfile()">ذخیره</button>
       <button class="modal-cancel" onclick="doLogout()">خروج از حساب</button>
@@ -195,6 +196,34 @@
     <div class="modal-actions">
       <button class="auth-btn" onclick="joinServer()">پیوستن</button>
       <button class="modal-cancel" onclick="closeModal('joinServerModal')">لغو</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- User Menu Modal -->
+<div class="modal-overlay hidden" id="userMenuModal">
+  <div class="modal">
+    <div class="ctx-username" id="ctxUsername">کاربر</div>
+    <input type="hidden" id="ctxUserId">
+    <input type="hidden" id="ctxUserRole">
+    <div class="role-section">
+      <label>رول:</label>
+      <select id="roleSelect" class="role-select">
+        <option value="admin">🛡️ ادمین</option>
+        <option value="mod">🔨 مود</option>
+        <option value="member">👤 عضو عادی</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="auth-btn" onclick="setRole()">ذخیره رول</button>
+    </div>
+    <div class="modal-actions" style="margin-top:8px">
+      <button class="danger-btn" onclick="kickUser()">🚪 کیک</button>
+      <button class="danger-btn" onclick="banUser()">🔨 بن</button>
+    </div>
+    <div class="modal-actions" style="margin-top:8px">
+      <button class="modal-cancel" onclick="closeModal('userMenuModal')">بستن</button>
     </div>
   </div>
 </div>
