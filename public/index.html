@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محفل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🌙 محفل</div>
+    <div class="auth-subtitle">جایی برای دوستات</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">ورود</button>
+      <button class="auth-tab" onclick="switchTab('register')">ثبت‌نام</button>
+    </div>
+    <div id="authError" class="auth-error"></div>
+    <input id="authUser" class="auth-input" type="text" placeholder="نام‌کاربری">
+    <input id="authPass" class="auth-input" type="password" placeholder="رمز عبور">
+    <button class="auth-btn" onclick="doAuth()">ادامه</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="app hidden">
+
+  <!-- SERVER BAR -->
+  <div class="server-bar">
+    <div class="server-icon active" id="si-default" title="محفل اصلی" onclick="selectServer('default')">🏠</div>
+    <div class="server-sep"></div>
+    <div id="extraServers"></div>
+    <div class="server-icon add-server" title="سرور جدید" onclick="openModal('createServerModal')">＋</div>
+    <div style="margin-top:auto"></div>
+    <div class="server-icon" title="پروفایل" onclick="openModal('profileModal')">👤</div>
+  </div>
+
+  <!-- CHANNEL SIDEBAR -->
+  <div class="channel-sidebar">
+    <div class="server-name-bar">
+      <span id="sidebarServerName">محفل اصلی</span>
+      <span class="srv-options" onclick="openServerOptions()">⚙</span>
+    </div>
+    <div id="channelList" class="channel-list"></div>
+    <div class="user-area">
+      <div class="user-avatar" id="myAvatarEl" style="background:var(--accent)">م</div>
+      <div class="user-info">
+        <div class="uname" id="myUsernameEl">—</div>
+        <div class="ustatus" id="myStatusEl">آنلاین</div>
+      </div>
+      <div class="user-actions">
+        <button class="icon-btn" id="micBtn" title="میکروفون" onclick="toggleMic()">🎤</button>
+        <button class="icon-btn" title="تنظیمات" onclick="openModal('profileModal')">⚙</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="main-content">
+    <div class="chat-header">
+      <span id="headerIcon">💬</span>
+      <span id="headerName" class="ch-name">عمومی</span>
+      <span id="headerType" class="ch-type">متن</span>
+      <div class="header-actions">
+        <button class="icon-btn" title="اعضا" onclick="toggleMemberList()">👥</button>
+        <button class="icon-btn" title="موزیک" onclick="openModal('musicModal')">🎵</button>
+      </div>
+    </div>
+
+    <div class="content-body">
+      <!-- VOICE ROOM VIEW -->
+      <div id="voiceView" class="voice-view hidden">
+        <div class="vc-title" id="vcTitle">🔊 ویس عمومی</div>
+        <div id="vcParticipants" class="vc-participants"></div>
+        <div class="vc-controls">
+          <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
+          <button class="vc-btn red" onclick="leaveVoice()">📵 خروج</button>
+          <button class="vc-btn" onclick="toggleDeafen()">🔊</button>
+        </div>
+      </div>
+
+      <!-- TEXT CHAT -->
+      <div id="chatView" class="chat-view">
+        <div id="messagesArea" class="messages-area"></div>
+        <div id="typingBar" class="typing-bar"></div>
+        <div class="input-area">
+          <div class="emoji-picker" id="emojiPicker"></div>
+          <button class="icon-btn" onclick="toggleEmoji()">😊</button>
+          <input id="msgInput" class="msg-input" placeholder="پیام بفرست..." onkeydown="handleKey(event)" oninput="handleTyping()">
+          <button class="send-btn" onclick="sendMessage()">ارسال</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER LIST -->
+  <div class="member-list hidden" id="memberList">
+    <div class="ml-title">اعضا آنلاین</div>
+    <div id="memberItems"></div>
+  </div>
+</div>
+
+<!-- ────── MODALS ────── -->
+
+<!-- Create Server -->
+<div class="modal-overlay hidden" id="createServerModal">
+  <div class="modal">
+    <div class="modal-title">سرور جدید</div>
+    <input id="newServerName" class="auth-input" placeholder="اسم سرور">
+    <div class="emoji-row" id="iconPicker">
+      🌟 🎮 🎵 🎨 📚 💻 🏆 🔥 🌊 🌙 🎉 ❤️
+    </div>
+    <input id="newServerIcon" class="auth-input" placeholder="آیکون (یه ایموجی)" maxlength="4" value="🌟">
+    <div class="modal-invite-wrap" id="serverInviteSection" style="display:none">
+      <div class="modal-label">لینک دعوت:</div>
+      <div class="invite-box" id="inviteLink"></div>
+      <button class="auth-btn sm" onclick="copyInvite()">کپی لینک</button>
+    </div>
+    <div class="modal-actions">
+      <button class="auth-btn" onclick="createServer()">بساز</button>
+      <button class="modal-cancel" onclick="closeModal('createServerModal')">لغو</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Channel -->
+<div class="modal-overlay hidden" id="addChannelModal">
+  <div class="modal">
+    <div class="modal-title">کانال جدید</div>
+    <input id="newChName" class="auth-input" placeholder="اسم کانال">
+    <div class="ch-type-pick">
+      <label><input type="radio" name="chType" value="text" checked> 💬 متن</label>
+      <label><input type="radio" name="chType" value="voice"> 🔊 ویس</label>
+    </div>
+    <div class="modal-actions">
+      <button class="auth-btn" onclick="addChannel()">بساز</button>
+      <button class="modal-cancel" onclick="closeModal('addChannelModal')">لغو</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile -->
+<div class="modal-overlay hidden" id="profileModal">
+  <div class="modal">
+    <div class="modal-title">پروفایل من</div>
+    <div class="profile-avatar" id="profileAvatar">م</div>
+    <div class="profile-uname" id="profileUsername">—</div>
+    <input id="profileBio" class="auth-input" placeholder="بیو (درباره خودت)">
+    <select id="profileStatus" class="auth-input">
+      <option value="آنلاین">🟢 آنلاین</option>
+      <option value="مشغول">🔴 مشغول</option>
+      <option value="غایب">🌙 غایب</option>
+    </select>
+    <div class="modal-actions">
+      <button class="auth-btn" onclick="saveProfile()">ذخیره</button>
+      <button class="modal-cancel" onclick="doLogout()">خروج از حساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- Music -->
+<div class="modal-overlay hidden" id="musicModal">
+  <div class="modal wide">
+    <div class="modal-title">🎵 موزیک</div>
+    <div class="music-url-row">
+      <input id="musicUrl" class="auth-input" placeholder="لینک یوتیوب یا آدرس فایل mp3">
+      <button class="auth-btn sm" onclick="addMusic()">اضافه</button>
+    </div>
+    <div id="musicList" class="music-list"></div>
+    <audio id="audioPlayer" onended="nextTrack()" ontimeupdate="updateProgress()"></audio>
+    <div class="music-controls">
+      <button class="mc-btn" onclick="prevTrack()">⏮</button>
+      <button class="mc-btn big" id="playPauseBtn" onclick="togglePlay()">▶</button>
+      <button class="mc-btn" onclick="nextTrack()">⏭</button>
+    </div>
+    <div class="progress-wrap" onclick="seekMusic(event)">
+      <div class="progress-bar"><div id="musicProgress" class="progress-fill"></div></div>
+    </div>
+    <div class="music-time" id="musicTime">0:00 / 0:00</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('musicModal')">بستن</button>
+    </div>
+  </div>
+</div>
+
+<!-- Join Server -->
+<div class="modal-overlay hidden" id="joinServerModal">
+  <div class="modal">
+    <div class="modal-title">پیوستن به سرور</div>
+    <input id="joinServerId" class="auth-input" placeholder="آیدی سرور را وارد کن">
+    <div class="modal-actions">
+      <button class="auth-btn" onclick="joinServer()">پیوستن</button>
+      <button class="modal-cancel" onclick="closeModal('joinServerModal')">لغو</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
