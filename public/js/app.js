@@ -503,7 +503,16 @@ function selectChannel(id,name,type){
 // ─── MEMBER LIST ─────────────────────────────────────────────────────────────
 function toggleMemberList(){
   memberListOpen=!memberListOpen;
-  $('memberList').classList.toggle('hidden',!memberListOpen);
+  const ml=$('memberList');
+  const ov=$('sidebarOverlay');
+  if(window.innerWidth<=768){
+    ml.classList.remove('hidden');
+    ml.classList.toggle('open',memberListOpen);
+    if(ov)ov.classList.toggle('show',memberListOpen);
+  } else {
+    ml.classList.toggle('hidden',!memberListOpen);
+  }
+  if(memberListOpen) renderMemberList();
 }
 function renderMemberList(){
   const list=$('memberItems');
@@ -630,8 +639,20 @@ function renderRolesList(sid){
 async function createRole(){
   const name=$('newRoleName').value.trim(),color=$('newRoleColor').value;
   if(!name){showToast('اسم رول الزامیه');return;}
-  const d=await api(`/api/servers/${currentServerId}/roles`,'POST',{name,color});
-  if(d.ok){if(!serverRoles[currentServerId])serverRoles[currentServerId]=[];serverRoles[currentServerId].push(d.role);renderRolesList(currentServerId);$('newRoleName').value='';showToast(`رول ${name} ساخته شد ✅`);}
+  try{
+    const d=await api(`/api/servers/${currentServerId}/roles`,'POST',{name,color});
+    if(d.ok){
+      if(!serverRoles[currentServerId])serverRoles[currentServerId]=[];
+      serverRoles[currentServerId].push(d.role);
+      renderRolesList(currentServerId);
+      $('newRoleName').value='';
+      showToast(`رول ${name} ساخته شد ✅`);
+    }else{
+      showToast('خطا: '+(d.msg||'سرور اجازه نداد'));
+    }
+  }catch(e){
+    showToast('خطا در اتصال');
+  }
 }
 async function deleteRole(rid){
   if(!confirm('حذف بشه؟'))return;
@@ -642,8 +663,23 @@ function copyCurrentInvite(){
   navigator.clipboard.writeText(`${location.origin}?join=${currentServerId}`);showToast('لینک کپی شد ✅');
 }
 async function saveServerProfile(){
-  const d=await api(`/api/servers/${currentServerId}/profile`,'POST',{nickname:$('serverNickname').value.trim(),avatarColor:$('serverAvatarColor').value});
-  if(d.ok){showToast('پروفایل سرور ذخیره شد ✅');closeModal('serverSettingsModal');}
+  try{
+    const btn=document.querySelector('#stab-profile .auth-btn');
+    if(btn){btn.textContent='در حال ذخیره...';btn.disabled=true;}
+    const d=await api(`/api/servers/${currentServerId}/profile`,'POST',{
+      nickname:$('serverNickname').value.trim(),
+      avatarColor:$('serverAvatarColor').value
+    });
+    if(btn){btn.textContent='💾 ذخیره';btn.disabled=false;}
+    if(d.ok){
+      showToast('پروفایل سرور ذخیره شد ✅');
+      closeModal('serverSettingsModal');
+    }else{
+      showToast('خطا: '+(d.msg||'دوباره امتحان کن'));
+    }
+  }catch(e){
+    showToast('خطا در اتصال به سرور');
+  }
 }
 
 // ─── SERVER MANAGEMENT ───────────────────────────────────────────────────────
@@ -826,16 +862,4 @@ function closeSidebars(){
   $('memberList')?.classList.remove('open');
   $('sidebarOverlay')?.classList.remove('show');
 }
-// Override toggleMemberList for mobile
-const _origToggleMemberList = toggleMemberList;
-function toggleMemberList(){
-  if(window.innerWidth<=768){
-    const ml=$('memberList'),ov=$('sidebarOverlay');
-    memberListOpen=!memberListOpen;
-    ml.classList.toggle('hidden',false);
-    ml.classList.toggle('open',memberListOpen);
-    ov.classList.toggle('show',memberListOpen);
-  } else {
-    _origToggleMemberList();
-  }
-}
+// mobile member list handled in main toggleMemberList

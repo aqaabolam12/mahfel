@@ -49,7 +49,7 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
 .auth-error{color:var(--red);font-size:13px;margin-bottom:10px;min-height:18px;text-align:center;}
 
 /* ── APP LAYOUT ───────────────────────────────────────────── */
-.app{display:grid;grid-template-columns:68px 232px 1fr;height:100vh;}
+.app{display:grid;grid-template-columns:68px 232px 1fr auto;height:100vh;}
 
 /* ── SERVER BAR ───────────────────────────────────────────── */
 .server-bar{background:var(--bg-side);display:flex;flex-direction:column;align-items:center;
