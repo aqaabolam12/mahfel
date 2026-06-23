@@ -44,6 +44,9 @@ window.onload=()=>{
   buildEmojiPicker();
   buildThemePicker();
   buildBgSelector();
+  // autofill last username
+  const lastUser=localStorage.getItem('lastUser');
+  if(lastUser&&$('authUser'))$('authUser').value=lastUser;
   // icon quick pick
   document.getElementById('iconQuickPick')?.addEventListener('click',e=>{
     const txt=e.target.textContent.trim();
@@ -66,7 +69,13 @@ async function doAuth(){
     const d=await post(authMode==='login'?'/api/login':'/api/register',{username:u,password:p},false);
     if(!d.ok){showErr(d.msg);return;}
     me=d.user;token=d.token;
-    localStorage.setItem('mt',token);localStorage.setItem('mu',JSON.stringify(me));
+    const remember=$('rememberMe')?.checked!==false;
+    if(remember){
+      localStorage.setItem('mt',token);
+      localStorage.setItem('mu',JSON.stringify(me));
+      // ذخیره username برای autofill
+      localStorage.setItem('lastUser',u);
+    }
     startApp();
   }catch(e){showErr('خطا در اتصال');}
 }
@@ -640,8 +649,27 @@ async function addChannel(){
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
 async function saveProfile(){
-  const d=await api('/api/users/me','PATCH',{bio:$('profileBio').value,status:$('profileStatus').value});
-  if(d.ok){me={...me,...d.user};localStorage.setItem('mu',JSON.stringify(me));updateMyUI();closeModal('profileModal');showToast('ذخیره شد ✅');}
+  try{
+    const btn=document.querySelector('#profileModal .auth-btn');
+    if(btn){btn.textContent='در حال ذخیره...';btn.disabled=true;}
+    const d=await api('/api/users/me','PATCH',{
+      bio:$('profileBio').value,
+      status:$('profileStatus').value
+    });
+    if(btn){btn.textContent='💾 ذخیره';btn.disabled=false;}
+    if(d.ok){
+      me={...me,...d.user};
+      localStorage.setItem('mu',JSON.stringify(me));
+      updateMyUI();
+      closeModal('profileModal');
+      showToast('پروفایل ذخیره شد ✅');
+    }else{
+      showToast('خطا: '+( d.msg||'دوباره امتحان کن'));
+    }
+  }catch(e){
+    showToast('خطا در اتصال به سرور');
+    console.error('saveProfile error:',e);
+  }
 }
 
 // ─── MESSAGING ────────────────────────────────────────────────────────────────
@@ -766,3 +794,29 @@ if(invId){window.addEventListener('load',()=>setTimeout(async()=>{
   const d=await api(`/api/servers/${invId}/join`,'POST');
   if(d.ok){if(!myServers.find(s=>s.id===d.server.id))myServers.push(d.server);renderServerBar();selectServer(d.server.id);showToast('پیوستی! 🎉');history.replaceState({},'','/');}
 },1500));}
+
+// ─── MOBILE ───────────────────────────────────────────────────────────────────
+function toggleChannelSidebar(){
+  const sb=document.querySelector('.channel-sidebar');
+  const ov=$('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show',sb.classList.contains('open'));
+}
+function closeSidebars(){
+  document.querySelector('.channel-sidebar')?.classList.remove('open');
+  $('memberList')?.classList.remove('open');
+  $('sidebarOverlay')?.classList.remove('show');
+}
+// Override toggleMemberList for mobile
+const _origToggleMemberList = toggleMemberList;
+function toggleMemberList(){
+  if(window.innerWidth<=768){
+    const ml=$('memberList'),ov=$('sidebarOverlay');
+    memberListOpen=!memberListOpen;
+    ml.classList.toggle('hidden',false);
+    ml.classList.toggle('open',memberListOpen);
+    ov.classList.toggle('show',memberListOpen);
+  } else {
+    _origToggleMemberList();
+  }
+}
