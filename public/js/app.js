@@ -1741,6 +1741,7 @@ async function startScreenShare() {
     
     screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
     socket.emit('screen_share_start', { channelId: currentVoiceId });
+    $('voiceView')?.classList.add('has-share');
     showToast('🖥 اشتراک صفحه شروع شد');
   } catch(e) {
     if (e.name !== 'NotAllowedError') showToast('خطا: ' + e.message);
@@ -1760,6 +1761,7 @@ function stopScreenShare() {
 
 function stopWatchingScreen() {
   $('screenShareArea')?.classList.add('hidden');
+  $('voiceView')?.classList.remove('has-share');
   const video = $('screenShareVideo');
   if (video) { video.srcObject = null; video.src = ''; }
 }

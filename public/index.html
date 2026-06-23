@@ -94,17 +94,20 @@
     <div class="content-body">
       <!-- VOICE VIEW -->
       <div id="voiceView" class="voice-view hidden">
-        <div class="vc-header">
-          <span id="vcTitle">🔊 ویس عمومی</span>
-        </div>
-        <div id="vcParticipants" class="vc-participants"></div>
+        <!-- Screen Share - top, big -->
         <div id="screenShareArea" class="screen-share-area hidden">
           <div class="ss-header">
             <span id="ssUsername">🖥 اشتراک صفحه</span>
             <button class="ss-close" onclick="stopWatchingScreen()">✕</button>
           </div>
-          <video id="screenShareVideo" autoplay playsinline style="width:100%;border-radius:10px;background:#000"></video>
+          <video id="screenShareVideo" autoplay playsinline muted></video>
         </div>
+        <!-- Participants - bottom strip like Discord -->
+        <div class="vc-header">
+          <span id="vcTitle">🔊 ویس عمومی</span>
+        </div>
+        <div id="vcParticipants" class="vc-participants"></div>
+
         <div class="vc-bar">
           <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
           <button class="vc-btn" id="deafenBtn" onclick="toggleDeafen()">🔊</button>
