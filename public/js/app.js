@@ -405,7 +405,7 @@ function startAudioRelay() {
   stopAudioRelay();
   try {
     // Use lower sample rate for less delay
-    audioCtxRelay = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
+    audioCtxRelay = new AudioContext({ latencyHint: 'interactive' }); // use default sample rate
     const src = audioCtxRelay.createMediaStreamSource(localStream);
     // 256 samples = ~16ms at 16000Hz (much less delay than 1024)
     const processor = audioCtxRelay.createScriptProcessor(256, 1, 1);
@@ -428,7 +428,7 @@ function startAudioRelay() {
       socket.volatile.emit('audio_chunk', {
         channelId: currentVoiceId,
         chunk: Array.from(int16),
-        sampleRate: 16000
+        sampleRate: audioCtxRelay.sampleRate
       });
     };
     
@@ -452,16 +452,13 @@ function playRelayedAudio(userId, int16Data, sampleRate) {
   
   try {
     if (!audioReceivers[userId]) {
-      audioReceivers[userId] = new AudioContext({ 
-        sampleRate: sampleRate || 16000,
-        latencyHint: 'interactive'
-      });
+      audioReceivers[userId] = new AudioContext({ latencyHint: 'interactive' });
       nextPlayTime[userId] = 0;
     }
     const ctx = audioReceivers[userId];
     if (ctx.state === 'suspended') ctx.resume();
     
-    const buf = ctx.createBuffer(1, int16Data.length, sampleRate || 16000);
+    const buf = ctx.createBuffer(1, int16Data.length, ctx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < int16Data.length; i++) {
       data[i] = int16Data[i] / 32767;
