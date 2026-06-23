@@ -397,9 +397,14 @@ function toggleDeafen(){
   showToast(isDeafened?'🔕 صدا قطع':'🔊 صدا وصل');
 }
 function setLocalVolume(uid,vol){
-  localVolumes[uid]=parseFloat(vol);
-  document.querySelectorAll('audio').forEach(a=>{if(a.dataset.userId===uid)a.volume=localMutes[uid]?0:parseFloat(vol);});
-  const l=document.getElementById(`vl-${uid}`);if(l)l.textContent=Math.round(vol*100)+'%';
+  localVolumes[uid]=Math.max(0,Math.min(1,parseFloat(vol)));
+  document.querySelectorAll('audio').forEach(a=>{if(a.dataset.userId===uid)a.volume=localMutes[uid]?0:localVolumes[uid];});
+  const l=document.getElementById(`vl-${uid}`);if(l)l.textContent=Math.round(localVolumes[uid]*100)+'%';
+}
+function changeVolume(uid,delta){
+  const cur=Math.round((localVolumes[uid]??1)*100);
+  const newVol=Math.max(0,Math.min(100,cur+delta));
+  setLocalVolume(uid,newVol/100);
 }
 function toggleLocalMute(uid){
   localMutes[uid]=!localMutes[uid];const vol=localVolumes[uid]??1;
@@ -843,6 +848,7 @@ function openModal(id){
   if(id==='profileModal'){ buildThemePicker(); buildBgSelector(); }
   if(id==='serverSettingsModal'){ loadServerRoles(currentServerId); }
   if(id==='audioSettingsModal'){ loadAudioDevices(); }
+  if(id==='soundboardModal'){ renderSoundboard(); }
 }
 function closeModal(id){$(id).classList.add('hidden');}
 document.addEventListener('DOMContentLoaded',()=>{
@@ -1063,3 +1069,138 @@ async function testSpeaker() {
 // joinVoice uses selectedMicId from audio settings
 
 // audio settings loaded via openModal below
+
+// ─── SOUNDBOARD ───────────────────────────────────────────────────────────────
+let sounds = JSON.parse(localStorage.getItem('mahfel_sounds') || '[]');
+let playingSound = null;
+
+function saveSounds() {
+  // فقط url و name ذخیره کن (نه data url برای performance)
+  const toSave = sounds.map(s => ({ name: s.name, url: s.url, dur: s.dur, emoji: s.emoji }));
+  try { localStorage.setItem('mahfel_sounds', JSON.stringify(toSave)); } catch(e) {}
+}
+
+function addSoundFiles(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const url = ev.target.result;
+      const audio = new Audio(url);
+      audio.onloadedmetadata = () => {
+        const dur = audio.duration;
+        const name = file.name.replace(/\.[^.]+$/, '').slice(0, 20);
+        sounds.push({ name, url, dur: Math.round(dur * 10) / 10, emoji: '🔊' });
+        saveSounds();
+        renderSoundboard();
+        showToast(`${name} اضافه شد`);
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+}
+
+function addSoundUrl() {
+  const url = $('sbUrlInput').value.trim();
+  const name = $('sbNameInput').value.trim() || url.split('/').pop().replace(/\.[^.]+$/, '').slice(0, 20) || 'صدا';
+  if (!url) { showToast('لینک رو وارد کن'); return; }
+  sounds.push({ name, url, dur: 0, emoji: '🔗' });
+  saveSounds();
+  renderSoundboard();
+  $('sbUrlInput').value = '';
+  $('sbNameInput').value = '';
+  showToast(`${name} اضافه شد`);
+}
+
+function renderSoundboard() {
+  const grid = $('soundboardGrid');
+  if (!grid) return;
+  if (!sounds.length) {
+    grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:30px;grid-column:1/-1">هنوز صدایی نداری — فایل آپلود کن یا لینک بده</div>';
+    return;
+  }
+  grid.innerHTML = sounds.map((s, i) => `
+    <div class="sb-btn" id="sb-${i}" onclick="playSound(${i})">
+      <button class="sb-del" onclick="deleteSound(event,${i})">✕</button>
+      <div class="sb-btn-icon">${s.emoji || '🔊'}</div>
+      <div class="sb-btn-name">${s.name}</div>
+      ${s.dur ? `<div class="sb-btn-dur">${s.dur}s</div>` : ''}
+      <div class="sb-progress" id="sbp-${i}"></div>
+    </div>`).join('');
+}
+
+function playSound(idx) {
+  const s = sounds[idx];
+  if (!s) return;
+
+  // توقف صدای قبلی
+  if (playingSound) {
+    playingSound.pause();
+    playingSound = null;
+    document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('playing'));
+    document.querySelectorAll('.sb-progress').forEach(p => p.style.width = '0%');
+  }
+
+  const audio = new Audio(s.url);
+  audio.crossOrigin = 'anonymous';
+  playingSound = audio;
+
+  const btn = document.getElementById(`sb-${idx}`);
+  const prog = document.getElementById(`sbp-${idx}`);
+  if (btn) btn.classList.add('playing');
+
+  audio.play().then(() => {
+    // اگه توی ویس هستیم صدا رو به ویس بفرست
+    if (localStream && currentVoiceId) {
+      playSoundInVoice(audio);
+    }
+    // progress bar
+    const interval = setInterval(() => {
+      if (!audio.duration) return;
+      const pct = (audio.currentTime / audio.duration) * 100;
+      if (prog) prog.style.width = pct + '%';
+    }, 50);
+
+    audio.onended = () => {
+      clearInterval(interval);
+      if (btn) btn.classList.remove('playing');
+      if (prog) prog.style.width = '0%';
+      playingSound = null;
+    };
+  }).catch(() => showToast('خطا در پخش صدا'));
+}
+
+function playSoundInVoice(audio) {
+  try {
+    const ctx = new AudioContext();
+    const src = ctx.createMediaElementSource(audio);
+    const dest = ctx.createMediaStreamDestination();
+    src.connect(dest);
+    src.connect(ctx.destination); // برای خودمون هم پخش بشه
+
+    const soundStream = dest.stream;
+    const soundTrack = soundStream.getAudioTracks()[0];
+
+    // به همه peer connections اضافه کن
+    Object.values(peerConnections).forEach(pc => {
+      try { pc.addTrack(soundTrack, soundStream); } catch(e) {}
+    });
+
+    audio.onended = () => {
+      soundTrack.stop();
+    };
+  } catch(e) {
+    console.log('Voice sound error:', e);
+  }
+}
+
+function deleteSound(e, idx) {
+  e.stopPropagation();
+  if (!confirm('حذف بشه؟')) return;
+  sounds.splice(idx, 1);
+  saveSounds();
+  renderSoundboard();
+}
+
+
