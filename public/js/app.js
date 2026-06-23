@@ -502,17 +502,13 @@ function selectChannel(id,name,type){
 
 // ─── MEMBER LIST ─────────────────────────────────────────────────────────────
 function toggleMemberList(){
-  memberListOpen=!memberListOpen;
-  const ml=$('memberList');
-  const ov=$('sidebarOverlay');
   if(window.innerWidth<=768){
-    ml.classList.remove('hidden');
-    ml.classList.toggle('open',memberListOpen);
-    if(ov)ov.classList.toggle('show',memberListOpen);
-  } else {
-    ml.classList.toggle('hidden',!memberListOpen);
+    toggleMemberListMobile();
+    return;
   }
-  if(memberListOpen) renderMemberList();
+  memberListOpen=!memberListOpen;
+  $('memberList').classList.toggle('hidden',!memberListOpen);
+  if(memberListOpen)renderMemberList();
 }
 function renderMemberList(){
   const list=$('memberItems');
@@ -853,13 +849,208 @@ if(invId){window.addEventListener('load',()=>setTimeout(async()=>{
 // ─── MOBILE ───────────────────────────────────────────────────────────────────
 function toggleChannelSidebar(){
   const sb=document.querySelector('.channel-sidebar');
-  const ov=$('sidebarOverlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('show',sb.classList.contains('open'));
+  const ov=$('mobOverlay');
+  const isOpen=sb.classList.contains('mob-open');
+  closeMobileSidebars();
+  if(!isOpen){
+    sb.classList.add('mob-open');
+    if(ov)ov.classList.add('show');
+  }
 }
-function closeSidebars(){
-  document.querySelector('.channel-sidebar')?.classList.remove('open');
-  $('memberList')?.classList.remove('open');
-  $('sidebarOverlay')?.classList.remove('show');
+function toggleMemberListMobile(){
+  const ml=$('memberList');
+  const ov=$('mobOverlay');
+  const isOpen=ml.classList.contains('mob-open');
+  closeMobileSidebars();
+  if(!isOpen){
+    ml.classList.remove('hidden');
+    ml.classList.add('mob-open');
+    if(ov)ov.classList.add('show');
+    renderMemberList();
+  }
 }
-// mobile member list handled in main toggleMemberList
+function closeMobileSidebars(){
+  document.querySelector('.channel-sidebar')?.classList.remove('mob-open');
+  $('memberList')?.classList.remove('mob-open');
+  $('mobOverlay')?.classList.remove('show');
+}
+
+// ─── AUDIO SETTINGS ───────────────────────────────────────────────────────────
+let selectedMicId = localStorage.getItem('mahfel_mic') || '';
+let selectedSpeakerId = localStorage.getItem('mahfel_speaker') || '';
+let micTestStream = null, micTestInterval = null;
+
+async function loadAudioDevices() {
+  try {
+    // درخواست permission اول
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    const mics = devices.filter(d => d.kind === 'audioinput');
+    const speakers = devices.filter(d => d.kind === 'audiooutput');
+
+    const micSel = $('micSelect');
+    const spkSel = $('speakerSelect');
+
+    if (micSel) {
+      micSel.innerHTML = mics.map(d =>
+        `<option value="${d.deviceId}" ${d.deviceId === selectedMicId ? 'selected' : ''}>
+          ${d.label || 'میکروفون ' + (mics.indexOf(d) + 1)}
+        </option>`
+      ).join('');
+      if (!selectedMicId && mics.length) selectedMicId = mics[0].deviceId;
+    }
+
+    if (spkSel) {
+      spkSel.innerHTML = `<option value="">پیش‌فرض سیستم</option>` +
+        speakers.map(d =>
+          `<option value="${d.deviceId}" ${d.deviceId === selectedSpeakerId ? 'selected' : ''}>
+            ${d.label || 'بلندگو ' + (speakers.indexOf(d) + 1)}
+          </option>`
+        ).join('');
+    }
+  } catch(e) {
+    showToast('دسترسی به دستگاه‌های صوتی نبود');
+  }
+}
+
+function updateMicDevice() {
+  selectedMicId = $('micSelect')?.value || '';
+}
+
+function updateSpeakerDevice() {
+  selectedSpeakerId = $('speakerSelect')?.value || '';
+}
+
+function saveAudioSettings() {
+  localStorage.setItem('mahfel_mic', selectedMicId);
+  localStorage.setItem('mahfel_speaker', selectedSpeakerId);
+  // اگه توی ویس هستیم stream رو آپدیت کن
+  if (localStream && currentVoiceId) {
+    restartVoiceWithNewDevice();
+  }
+  closeModal('audioSettingsModal');
+  showToast('تنظیمات صدا ذخیره شد ✅');
+}
+
+async function restartVoiceWithNewDevice() {
+  try {
+    const constraints = {
+      audio: {
+        deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+        echoCancellation: true,
+        noiseSuppression: true,
+      }
+    };
+    const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+    // جایگزین track قدیمی
+    const newTrack = newStream.getAudioTracks()[0];
+    Object.values(peerConnections).forEach(pc => {
+      const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
+      if (sender) sender.replaceTrack(newTrack);
+    });
+    localStream.getAudioTracks().forEach(t => t.stop());
+    localStream = newStream;
+    if (isMuted) newTrack.enabled = false;
+    showToast('میکروفون تغییر کرد ✅');
+  } catch(e) {
+    showToast('خطا در تغییر میکروفون');
+  }
+}
+
+async function testMic() {
+  const btn = $('micTestBtn');
+  const meter = $('micMeter');
+  const label = $('micTestLabel');
+
+  if (micTestStream) {
+    // توقف تست
+    micTestStream.getTracks().forEach(t => t.stop());
+    micTestStream = null;
+    clearInterval(micTestInterval);
+    if (meter) meter.style.width = '0%';
+    if (btn) btn.textContent = '▶ شروع تست';
+    if (label) label.textContent = 'میکروفون رو تست کن';
+    return;
+  }
+
+  try {
+    const constraints = {
+      audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true
+    };
+    micTestStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if (btn) btn.textContent = '⏹ توقف تست';
+    if (label) label.textContent = 'در حال تست...';
+
+    const ctx = new AudioContext();
+    const src = ctx.createMediaStreamSource(micTestStream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+
+    micTestInterval = setInterval(() => {
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      const pct = Math.min(100, avg * 2);
+      if (meter) meter.style.width = pct + '%';
+      if (label) label.textContent = avg > 10 ? '✅ صدا دریافت شد!' : 'حرف بزن...';
+    }, 50);
+  } catch(e) {
+    showToast('دسترسی به میکروفون نبود');
+  }
+}
+
+async function testSpeaker() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 440;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
+    osc.start();
+    osc.stop(ctx.currentTime + 1);
+    showToast('🔊 صدای تست پخش شد');
+  } catch(e) {
+    showToast('خطا در پخش صدا');
+  }
+}
+
+// Override joinVoice to use selected mic
+const _origJoinVoice = joinVoice;
+async function joinVoice(channelId) {
+  const savedMic = localStorage.getItem('mahfel_mic');
+  if (savedMic) selectedMicId = savedMic;
+  // استفاده از میکروفون انتخاب شده
+  const constraints = {
+    audio: {
+      deviceId: selectedMicId ? { ideal: selectedMicId } : undefined,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    }
+  };
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    // Set speaker for all future audio elements
+    startSpeakDetect();
+    socket.emit('join_voice', { channelId });
+    currentVoiceId = channelId;
+    playTone([523, 659, 784]);
+    showToast('🎤 به ویس پیوستی');
+  } catch(e) {
+    socket.emit('join_voice', { channelId });
+    currentVoiceId = channelId;
+    showToast('⚠️ بدون میکروفون');
+  }
+}
+
+// Open audio settings and load devices
+const _origOpenModal2 = openModal;
+function openModal(id) {
+  _origOpenModal2(id);
+  if (id === 'audioSettingsModal') loadAudioDevices();
+}
