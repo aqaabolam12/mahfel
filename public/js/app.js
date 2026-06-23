@@ -110,6 +110,14 @@ function connectSocket(){
 
   socket.on('voice_update',({channelId,users})=>{
     voiceUsersCache[channelId]=users;
+    // Update audio volumes for existing connections
+    Object.entries(socketUserMap).forEach(([sid,uid])=>{
+      const audio=peerAudios[sid];
+      if(audio&&audio.dataset.userId!==uid){
+        audio.dataset.userId=uid;
+        audio.volume=localMutes[uid]?0:(localVolumes[uid]??1);
+      }
+    });
     updateVoiceSidebar(channelId,users);
     if(channelId===currentVoiceId)renderVcUsers(users);
   });
@@ -161,14 +169,17 @@ function connectSocket(){
   // WebRTC
   socket.on('voice_user_joined',async({user:u,socketId})=>{
     if(!localStream)return;
-    const pc=newPC(socketId,u.id);
+    const pc=newPC(socketId,u.id); // pass userId so audio gets tagged
     localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
     const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
     socket.emit('rtc_offer',{to:socketId,offer});
   });
   socket.on('rtc_offer',async({from,offer})=>{
-    const pc=newPC(from,null);
+    // Try to find userId from voice room cache
+    const vcUsers=voiceUsersCache[currentVoiceId]||[];
+    // We'll update socketUserMap when voice_update comes
+    const pc=newPC(from,socketUserMap[from]||null);
     if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
     await pc.setRemoteDescription(offer);
     const ans=await pc.createAnswer();
@@ -184,30 +195,44 @@ function connectSocket(){
 }
 
 // ─── WEBRTC ───────────────────────────────────────────────────────────────────
+// Map socketId -> userId for audio control
+const socketUserMap = {};
+
 function newPC(socketId, userId){
+  if(userId) socketUserMap[socketId]=userId;
+  
   const pc=new RTCPeerConnection({
-    iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]
+    iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'}
+    ]
   });
   peerConnections[socketId]=pc;
+  
   pc.onicecandidate=e=>{
     if(e.candidate)socket.emit('rtc_candidate',{to:socketId,candidate:e.candidate});
   };
+  
   pc.ontrack=e=>{
-    // Remove old audio for this peer
-    if(peerAudios[socketId]){peerAudios[socketId].pause(); peerAudios[socketId].remove();}
+    if(peerAudios[socketId]){peerAudios[socketId].pause();peerAudios[socketId].remove();}
     const audio=document.createElement('audio');
     audio.autoplay=true;
     audio.srcObject=e.streams[0];
     audio.dataset.socketId=socketId;
-    if(userId)audio.dataset.userId=userId;
-    // Apply saved volume/mute
-    if(userId){
-      audio.volume=localMutes[userId]?0:(localVolumes[userId]??1);
+    const uid=socketUserMap[socketId];
+    if(uid){
+      audio.dataset.userId=uid;
+      audio.volume=localMutes[uid]?0:(localVolumes[uid]??1);
     }
     document.body.appendChild(audio);
     peerAudios[socketId]=audio;
-    audio.play().catch(()=>{});
+    audio.play().catch(e=>console.log('audio play error:',e));
   };
+  
+  pc.onconnectionstatechange=()=>{
+    console.log(`PC ${socketId}: ${pc.connectionState}`);
+  };
+  
   return pc;
 }
 
@@ -298,30 +323,28 @@ function toggleDeafen(){
 // ─── LOCAL VOLUME ─────────────────────────────────────────────────────────────
 function setLocalVolume(userId, vol){
   localVolumes[userId]=parseFloat(vol);
-  // Apply to audio elements
-  Object.values(peerAudios).forEach(a=>{
+  // Apply to all audio elements for this user
+  document.querySelectorAll('audio').forEach(a=>{
     if(a.dataset.userId===userId)
       a.volume=localMutes[userId]?0:parseFloat(vol);
   });
-  // Update label
   const lbl=document.getElementById(`vol-lbl-${userId}`);
   if(lbl)lbl.textContent=Math.round(vol*100)+'%';
 }
+
 function toggleLocalMute(userId){
   localMutes[userId]=!localMutes[userId];
   const vol=localVolumes[userId]??1;
-  Object.values(peerAudios).forEach(a=>{
+  document.querySelectorAll('audio').forEach(a=>{
     if(a.dataset.userId===userId)
       a.volume=localMutes[userId]?0:vol;
   });
   const btn=document.getElementById(`lmute-${userId}`);
   if(btn){
     btn.textContent=localMutes[userId]?'🔇':'🔊';
-    btn.classList.toggle('muted',localMutes[userId]);
+    btn.classList.toggle('muted',!!localMutes[userId]);
   }
-  // Rerender to update speaking ring
-  const users=voiceUsersCache[currentVoiceId]||[];
-  renderVcUsers(users);
+  renderVcUsers(voiceUsersCache[currentVoiceId]||[]);
 }
 
 function renderVcUsers(users){
