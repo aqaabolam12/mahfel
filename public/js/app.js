@@ -1,6 +1,6 @@
-// mahfel v43 - audio throttle fix
+// gaphub v43 - audio throttle fix
 // ═══════════════════════════════════════════════════════════
-//  محفل — APP.JS  v15
+//  GapHub — APP.JS  v15
 // ═══════════════════════════════════════════════════════════
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
@@ -88,9 +88,10 @@ function startApp(){
   $('authScreen').classList.add('hidden');
   $('app').classList.remove('hidden');
   applyTheme(localStorage.getItem('mtheme')||'purple');
-  applyBgEffect(localStorage.getItem('mahfel_bg')||'none');
+  applyBgEffect(localStorage.getItem('gaphub_bg')||'none');
   connectSocket();updateMyUI();loadServers();
   setTimeout(startPingMonitor, 3000);
+  setTimeout(registerScreenShareEvents, 1000);
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -133,7 +134,7 @@ function applyTheme(name){
 // ─── BG EFFECTS ───────────────────────────────────────────────────────────────
 function buildBgSelector(){
   const c=$('bgEffectSelector');if(!c)return;
-  const cur=localStorage.getItem('mahfel_bg')||'none';
+  const cur=localStorage.getItem('gaphub_bg')||'none';
   c.innerHTML=BG_EFFECTS.map(e=>`
     <div class="effect-card ${cur===e.id?'active':''}" onclick="setBgEffect('${e.id}')">
       <div class="e-icon">${e.icon}</div>
@@ -141,7 +142,7 @@ function buildBgSelector(){
     </div>`).join('');
 }
 function setBgEffect(id){
-  currentBgEffect=id;localStorage.setItem('mahfel_bg',id);
+  currentBgEffect=id;localStorage.setItem('gaphub_bg',id);
   applyBgEffect(id);buildBgSelector();
   showToast(BG_EFFECTS.find(e=>e.id===id)?.name+' فعال شد');
 }
@@ -484,14 +485,14 @@ function playRelayedAudio(userId, int16Data, sampleRate) {
 
 // ─── VOICE ────────────────────────────────────────────────────────────────────
 async function joinVoice(channelId){
-  const savedMic=localStorage.getItem('mahfel_mic')||'';
+  const savedMic=localStorage.getItem('gaphub_mic')||'';
   if(savedMic) selectedMicId=savedMic;
   
   try{
-    const nc=localStorage.getItem('mahfel_nc')!=='0';
-    const ag=localStorage.getItem('mahfel_ag')!=='0';
-    const ec=localStorage.getItem('mahfel_ec')!=='0';
-    const micId=localStorage.getItem('mahfel_mic')||'';
+    const nc=localStorage.getItem('gaphub_nc')!=='0';
+    const ag=localStorage.getItem('gaphub_ag')!=='0';
+    const ec=localStorage.getItem('gaphub_ec')!=='0';
+    const micId=localStorage.getItem('gaphub_mic')||'';
     const audioOpts={
       echoCancellation:ec,
       noiseSuppression:nc,
@@ -1198,14 +1199,14 @@ function closeMobileSidebars(){
 }
 
 // ─── AUDIO SETTINGS ───────────────────────────────────────────────────────────
-let selectedMicId = localStorage.getItem('mahfel_mic') || '';
-let selectedSpeakerId = localStorage.getItem('mahfel_speaker') || '';
+let selectedMicId = localStorage.getItem('gaphub_mic') || '';
+let selectedSpeakerId = localStorage.getItem('gaphub_speaker') || '';
 let micTestStream = null, micTestInterval = null;
 
 function saveAudioToggles(){
-  localStorage.setItem('mahfel_nc', $('noiseCancelToggle')?.checked?'1':'0');
-  localStorage.setItem('mahfel_ag', $('autoGainToggle')?.checked?'1':'0');
-  localStorage.setItem('mahfel_ec', $('echoCancelToggle')?.checked?'1':'0');
+  localStorage.setItem('gaphub_nc', $('noiseCancelToggle')?.checked?'1':'0');
+  localStorage.setItem('gaphub_ag', $('autoGainToggle')?.checked?'1':'0');
+  localStorage.setItem('gaphub_ec', $('echoCancelToggle')?.checked?'1':'0');
   showToast('تنظیمات صدا ذخیره شد ✅');
   // اگه توی ویس هستیم اعمال کن
   if(localStream && currentVoiceId) restartVoiceWithNewDevice();
@@ -1213,16 +1214,16 @@ function saveAudioToggles(){
 
 function loadAudioToggles(){
   const nc=$('noiseCancelToggle'), ag=$('autoGainToggle'), ec=$('echoCancelToggle');
-  if(nc) nc.checked = localStorage.getItem('mahfel_nc')!=='0';
-  if(ag) ag.checked = localStorage.getItem('mahfel_ag')!=='0';
-  if(ec) ec.checked = localStorage.getItem('mahfel_ec')!=='0';
+  if(nc) nc.checked = localStorage.getItem('gaphub_nc')!=='0';
+  if(ag) ag.checked = localStorage.getItem('gaphub_ag')!=='0';
+  if(ec) ec.checked = localStorage.getItem('gaphub_ec')!=='0';
 }
 
 function getAudioConstraints(){
-  const nc = localStorage.getItem('mahfel_nc')!=='0';
-  const ag = localStorage.getItem('mahfel_ag')!=='0';
-  const ec = localStorage.getItem('mahfel_ec')!=='0';
-  const mic = localStorage.getItem('mahfel_mic')||'';
+  const nc = localStorage.getItem('gaphub_nc')!=='0';
+  const ag = localStorage.getItem('gaphub_ag')!=='0';
+  const ec = localStorage.getItem('gaphub_ec')!=='0';
+  const mic = localStorage.getItem('gaphub_mic')||'';
   const c = {
     noiseSuppression: nc,
     autoGainControl: ag,
@@ -1277,8 +1278,8 @@ function updateSpeakerDevice() {
 }
 
 function saveAudioSettings() {
-  localStorage.setItem('mahfel_mic', selectedMicId);
-  localStorage.setItem('mahfel_speaker', selectedSpeakerId);
+  localStorage.setItem('gaphub_mic', selectedMicId);
+  localStorage.setItem('gaphub_speaker', selectedSpeakerId);
   // اگه توی ویس هستیم stream رو آپدیت کن
   if (localStream && currentVoiceId) {
     restartVoiceWithNewDevice();
@@ -1372,13 +1373,13 @@ async function testSpeaker() {
 // audio settings loaded via openModal below
 
 // ─── SOUNDBOARD ───────────────────────────────────────────────────────────────
-let sounds = JSON.parse(localStorage.getItem('mahfel_sounds') || '[]');
+let sounds = JSON.parse(localStorage.getItem('gaphub_sounds') || '[]');
 let playingSound = null;
 
 function saveSounds() {
   // فقط url و name ذخیره کن (نه data url برای performance)
   const toSave = sounds.map(s => ({ name: s.name, url: s.url, dur: s.dur, emoji: s.emoji }));
-  try { localStorage.setItem('mahfel_sounds', JSON.stringify(toSave)); } catch(e) {}
+  try { localStorage.setItem('gaphub_sounds', JSON.stringify(toSave)); } catch(e) {}
 }
 
 function addSoundFiles(e) {
@@ -1688,7 +1689,7 @@ async function clearServerMessages(){
 function shareInvite(){
   const link=`${location.origin}?join=${currentServerId}`;
   if(navigator.share){
-    navigator.share({title:'محفل',text:'بیا توی سرور من!',url:link});
+    navigator.share({title:'GapHub',text:'بیا توی سرور من!',url:link});
   }else{
     navigator.clipboard.writeText(link);
     showToast('لینک کپی شد ✅');
@@ -1718,3 +1719,129 @@ function startPingMonitor() {
 
 // Ping starts in startApp
 
+
+// ─── SCREEN SHARE ─────────────────────────────────────────────────────────────
+let screenStream = null;
+let screenPC = null;
+let isSharing = false;
+let screenSender = null;
+
+async function toggleScreenShare() {
+  if (isSharing) {
+    stopScreenShare();
+  } else {
+    startScreenShare();
+  }
+}
+
+async function startScreenShare() {
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 30, width: 1920, height: 1080 },
+      audio: true
+    });
+
+    isSharing = true;
+    const btn = $('screenShareBtn');
+    if (btn) { btn.textContent = '🔴'; btn.style.background = 'rgba(239,68,68,.2)'; }
+
+    // Notify others
+    socket.emit('screen_share_start', { channelId: currentVoiceId });
+
+    // Send video via socket.io (relay)
+    startVideoRelay();
+
+    // When user stops sharing from browser UI
+    screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
+
+    showToast('🖥 اشتراک صفحه شروع شد');
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') showToast('خطا در اشتراک صفحه');
+  }
+}
+
+function startVideoRelay() {
+  if (!screenStream) return;
+  const track = screenStream.getVideoTracks()[0];
+  const mediaRecorder = new MediaRecorder(new MediaStream([track]), {
+    mimeType: 'video/webm;codecs=vp9',
+    videoBitsPerSecond: 1500000
+  });
+
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0 && currentVoiceId) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        socket.emit('screen_chunk', {
+          channelId: currentVoiceId,
+          chunk: reader.result,
+          userId: me.id
+        });
+      };
+      reader.readAsArrayBuffer(e.data);
+    }
+  };
+
+  mediaRecorder.start(200); // Send every 200ms
+  screenSender = mediaRecorder;
+}
+
+function stopScreenShare() {
+  isSharing = false;
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  if (screenSender) { try { screenSender.stop(); } catch(e) {} screenSender = null; }
+
+  const btn = $('screenShareBtn');
+  if (btn) { btn.textContent = '🖥'; btn.style.background = ''; }
+
+  socket.emit('screen_share_stop', { channelId: currentVoiceId });
+  showToast('🖥 اشتراک صفحه متوقف شد');
+  renderVcUsers(voiceUsersCache[currentVoiceId] || []);
+}
+
+function stopWatchingScreen() {
+  $('screenShareArea')?.classList.add('hidden');
+  const video = $('screenShareVideo');
+  if (video) { video.srcObject = null; }
+}
+
+// ─── SCREEN SHARE SOCKET EVENTS ──────────────────────────────────────────────
+// These are registered in connectSocket
+function registerScreenShareEvents() {
+  socket.on('screen_share_started', ({ userId, username }) => {
+    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده`);
+    renderVcUsers(voiceUsersCache[currentVoiceId] || []);
+    // Show watch button
+    const card = document.querySelector(`.vc-card[data-uid="${userId}"]`)?.closest('.vc-card');
+    if (card) card.classList.add('sharing');
+  });
+
+  socket.on('screen_share_stopped', ({ userId }) => {
+    $('screenShareArea')?.classList.add('hidden');
+    document.querySelectorAll('.vc-card.sharing').forEach(c => c.classList.remove('sharing'));
+  });
+
+  socket.on('screen_chunk', ({ chunk, userId, username }) => {
+    const area = $('screenShareArea');
+    const video = $('screenShareVideo');
+    if (!area || !video) return;
+
+    area.classList.remove('hidden');
+    setText('ssUsername', `🖥 ${username}`);
+
+    if (!video.srcObject) {
+      const ms = new MediaSource();
+      video.src = URL.createObjectURL(ms);
+      ms.addEventListener('sourceopen', () => {
+        try {
+          const sb = ms.addSourceBuffer('video/webm;codecs=vp9');
+          sb.appendBuffer(chunk);
+          socket.on('screen_chunk', ({ chunk: c }) => {
+            if (!sb.updating) sb.appendBuffer(c);
+          });
+        } catch(e) {}
+      });
+    }
+    video.play().catch(() => {});
+  });
+}

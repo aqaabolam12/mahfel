@@ -621,6 +621,29 @@ socket.on('rtc_state', ({ to, state }) => {
   }
 });
 
+
+  // ─── SCREEN SHARE ─────────────────────────────────────────────────────────
+  socket.on('screen_share_start', ({ channelId }) => {
+    socket.to(`voice:${channelId}`).emit('screen_share_started', {
+      userId: socket.userId,
+      username: user?.username || 'کاربر'
+    });
+  });
+
+  socket.on('screen_share_stop', ({ channelId }) => {
+    socket.to(`voice:${channelId}`).emit('screen_share_stopped', {
+      userId: socket.userId
+    });
+  });
+
+  socket.on('screen_chunk', ({ channelId, chunk, userId }) => {
+    socket.to(`voice:${channelId}`).emit('screen_chunk', {
+      chunk,
+      userId: socket.userId,
+      username: user?.username || 'کاربر'
+    });
+  });
+
   // Ping check - respond immediately
   socket.on('ping_check', (sentAt) => {
     socket.emit('pong_check', sentAt);

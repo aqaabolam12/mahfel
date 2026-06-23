@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>محفل</title>
+<title>GapHub</title>
 <link rel="icon" href="/favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
@@ -20,7 +20,7 @@
 <div id="authScreen" class="auth-screen" dir="rtl">
   <div class="auth-card">
     <div class="auth-logo"><img src="/icon.png" style="width:72px;height:72px;border-radius:50%" onerror="this.outerHTML='🌙'"></div>
-    <div class="auth-title">محفل</div>
+    <div class="auth-title">GapHub</div>
     <div id="inviteBanner" class="invite-banner hidden"></div>
     <div class="auth-sub">جایی برای دوستات</div>
     <div class="auth-tabs">
@@ -56,7 +56,7 @@
   <!-- CHANNEL SIDEBAR -->
   <div class="channel-sidebar">
     <div class="server-name-bar">
-      <span id="sidebarServerName" class="srv-title">محفل اصلی</span>
+      <span id="sidebarServerName" class="srv-title">GapHub اصلی</span>
       <span class="srv-gear" onclick="openServerSettings()" title="تنظیمات سرور">⚙</span>
     </div>
     <div id="channelList" class="channel-list"></div>
@@ -98,12 +98,19 @@
           <span id="vcTitle">🔊 ویس عمومی</span>
         </div>
         <div id="vcParticipants" class="vc-participants"></div>
+        <div id="screenShareArea" class="screen-share-area hidden">
+          <div class="ss-header">
+            <span id="ssUsername">🖥 اشتراک صفحه</span>
+            <button class="ss-close" onclick="stopWatchingScreen()">✕</button>
+          </div>
+          <video id="screenShareVideo" autoplay playsinline style="width:100%;border-radius:10px;background:#000"></video>
+        </div>
         <div class="vc-bar">
           <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
           <button class="vc-btn" id="deafenBtn" onclick="toggleDeafen()">🔊</button>
+          <button class="vc-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥</button>
           <button class="vc-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎛</button>
           <button class="vc-btn danger" onclick="leaveVoice()">📵 خروج</button>
-          <button class="vc-btn" onclick="checkVoiceDebug()" title="وضعیت اتصال" style="font-size:11px">🔍 debug</button>
         </div>
       </div>
 

@@ -587,3 +587,25 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
 .ping-display.lag #pingValue { color:#f59e0b; }
 .ping-display.bad #pingValue { color:#ef4444; }
 .ping-label { font-size:10px; color:var(--muted); }
+
+/* ─── SCREEN SHARE ───────────────────────────────────────── */
+.screen-share-area {
+  width:100%; padding:16px; background:var(--bg-card);
+  border-top:1px solid var(--border);
+}
+.ss-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px; font-weight:600; font-size:14px;
+}
+.ss-close {
+  width:28px; height:28px; border-radius:6px; background:rgba(239,68,68,.2);
+  border:none; color:var(--red); cursor:pointer; font-size:16px;
+}
+.vc-card.sharing {
+  border-color:#00b4ff !important;
+  box-shadow:0 0 16px rgba(0,180,255,.3) !important;
+}
+.vc-card.sharing .vc-avatar::after {
+  content:'🖥'; position:absolute; bottom:-4px; right:-4px;
+  font-size:14px; background:var(--bg-card); border-radius:50%;
+}
