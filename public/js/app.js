@@ -1720,128 +1720,122 @@ function startPingMonitor() {
 // Ping starts in startApp
 
 
-// ─── SCREEN SHARE ─────────────────────────────────────────────────────────────
+// ─── SCREEN SHARE (WebRTC P2P) ────────────────────────────────────────────────
 let screenStream = null;
-let screenPC = null;
 let isSharing = false;
-let screenSender = null;
+let screenPCs = {}; // { socketId: RTCPeerConnection }
 
 async function toggleScreenShare() {
-  if (isSharing) {
-    stopScreenShare();
-  } else {
-    startScreenShare();
-  }
+  isSharing ? stopScreenShare() : startScreenShare();
 }
 
 async function startScreenShare() {
   try {
     screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 30, width: 1920, height: 1080 },
-      audio: true
+      video: { frameRate: 15, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
     });
-
     isSharing = true;
     const btn = $('screenShareBtn');
-    if (btn) { btn.textContent = '🔴'; btn.style.background = 'rgba(239,68,68,.2)'; }
-
-    // Notify others
-    socket.emit('screen_share_start', { channelId: currentVoiceId });
-
-    // Send video via socket.io (relay)
-    startVideoRelay();
-
-    // When user stops sharing from browser UI
+    if (btn) { btn.textContent = '🔴🖥'; btn.style.background = 'rgba(239,68,68,.2)'; }
+    
     screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
-
+    socket.emit('screen_share_start', { channelId: currentVoiceId });
     showToast('🖥 اشتراک صفحه شروع شد');
   } catch(e) {
-    if (e.name !== 'NotAllowedError') showToast('خطا در اشتراک صفحه');
+    if (e.name !== 'NotAllowedError') showToast('خطا: ' + e.message);
   }
-}
-
-function startVideoRelay() {
-  if (!screenStream) return;
-  const track = screenStream.getVideoTracks()[0];
-  const mediaRecorder = new MediaRecorder(new MediaStream([track]), {
-    mimeType: 'video/webm;codecs=vp9',
-    videoBitsPerSecond: 1500000
-  });
-
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size > 0 && currentVoiceId) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        socket.emit('screen_chunk', {
-          channelId: currentVoiceId,
-          chunk: reader.result,
-          userId: me.id
-        });
-      };
-      reader.readAsArrayBuffer(e.data);
-    }
-  };
-
-  mediaRecorder.start(200); // Send every 200ms
-  screenSender = mediaRecorder;
 }
 
 function stopScreenShare() {
   isSharing = false;
   if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  if (screenSender) { try { screenSender.stop(); } catch(e) {} screenSender = null; }
-
+  Object.values(screenPCs).forEach(pc => pc.close());
+  screenPCs = {};
   const btn = $('screenShareBtn');
   if (btn) { btn.textContent = '🖥'; btn.style.background = ''; }
-
   socket.emit('screen_share_stop', { channelId: currentVoiceId });
   showToast('🖥 اشتراک صفحه متوقف شد');
-  renderVcUsers(voiceUsersCache[currentVoiceId] || []);
 }
 
 function stopWatchingScreen() {
   $('screenShareArea')?.classList.add('hidden');
   const video = $('screenShareVideo');
-  if (video) { video.srcObject = null; }
+  if (video) { video.srcObject = null; video.src = ''; }
 }
 
-// ─── SCREEN SHARE SOCKET EVENTS ──────────────────────────────────────────────
-// These are registered in connectSocket
-function registerScreenShareEvents() {
-  socket.on('screen_share_started', ({ userId, username }) => {
-    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده`);
-    renderVcUsers(voiceUsersCache[currentVoiceId] || []);
-    // Show watch button
-    const card = document.querySelector(`.vc-card[data-uid="${userId}"]`)?.closest('.vc-card');
-    if (card) card.classList.add('sharing');
+async function createScreenPC(toSocketId, asOfferer) {
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   });
+  screenPCs[toSocketId] = pc;
 
-  socket.on('screen_share_stopped', ({ userId }) => {
-    $('screenShareArea')?.classList.add('hidden');
-    document.querySelectorAll('.vc-card.sharing').forEach(c => c.classList.remove('sharing'));
-  });
+  pc.onicecandidate = e => {
+    if (e.candidate) socket.emit('screen_ice', { to: toSocketId, candidate: e.candidate });
+  };
 
-  socket.on('screen_chunk', ({ chunk, userId, username }) => {
-    const area = $('screenShareArea');
+  pc.ontrack = e => {
     const video = $('screenShareVideo');
-    if (!area || !video) return;
-
-    area.classList.remove('hidden');
-    setText('ssUsername', `🖥 ${username}`);
-
-    if (!video.srcObject) {
-      const ms = new MediaSource();
-      video.src = URL.createObjectURL(ms);
-      ms.addEventListener('sourceopen', () => {
-        try {
-          const sb = ms.addSourceBuffer('video/webm;codecs=vp9');
-          sb.appendBuffer(chunk);
-          socket.on('screen_chunk', ({ chunk: c }) => {
-            if (!sb.updating) sb.appendBuffer(c);
-          });
-        } catch(e) {}
-      });
+    const area = $('screenShareArea');
+    if (video && area) {
+      video.srcObject = e.streams[0];
+      area.classList.remove('hidden');
+      video.play().catch(() => {});
     }
-    video.play().catch(() => {});
+  };
+
+  if (asOfferer && screenStream) {
+    screenStream.getTracks().forEach(t => pc.addTrack(t, screenStream));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('screen_offer', { to: toSocketId, offer });
+  }
+  return pc;
+}
+
+function registerScreenShareEvents() {
+  // Someone started sharing - request their stream
+  socket.on('screen_share_started', async ({ userId, username, socketId }) => {
+    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده — کلیک کن ببینی`);
+    setText('ssUsername', `🖥 ${username}`);
+    $('screenShareArea')?.classList.remove('hidden');
+    // Create PC to receive
+    const pc = await createScreenPC(socketId, false);
+    // Ask sharer to send offer
+    socket.emit('screen_request', { to: socketId });
+  });
+
+  socket.on('screen_share_stopped', () => {
+    $('screenShareArea')?.classList.add('hidden');
+    const video = $('screenShareVideo');
+    if (video) { video.srcObject = null; }
+    Object.values(screenPCs).forEach(pc => pc.close());
+    screenPCs = {};
+    showToast('🖥 اشتراک صفحه تموم شد');
+  });
+
+  // Viewer requested our stream
+  socket.on('screen_request', async ({ from }) => {
+    if (!isSharing || !screenStream) return;
+    const pc = await createScreenPC(from, true);
+  });
+
+  socket.on('screen_offer', async ({ from, offer }) => {
+    let pc = screenPCs[from];
+    if (!pc) pc = await createScreenPC(from, false);
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('screen_answer', { to: from, answer });
+  });
+
+  socket.on('screen_answer', async ({ from, answer }) => {
+    const pc = screenPCs[from];
+    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+  });
+
+  socket.on('screen_ice', async ({ from, candidate }) => {
+    const pc = screenPCs[from];
+    if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
 }

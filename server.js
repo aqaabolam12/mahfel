@@ -622,26 +622,28 @@ socket.on('rtc_state', ({ to, state }) => {
 });
 
 
-  // ─── SCREEN SHARE ─────────────────────────────────────────────────────────
+  // ─── SCREEN SHARE (WebRTC signaling) ─────────────────────────────────────
   socket.on('screen_share_start', ({ channelId }) => {
     socket.to(`voice:${channelId}`).emit('screen_share_started', {
       userId: socket.userId,
-      username: user?.username || 'کاربر'
+      username: user?.username || 'کاربر',
+      socketId: socket.id
     });
   });
-
   socket.on('screen_share_stop', ({ channelId }) => {
-    socket.to(`voice:${channelId}`).emit('screen_share_stopped', {
-      userId: socket.userId
-    });
+    socket.to(`voice:${channelId}`).emit('screen_share_stopped', { userId: socket.userId });
   });
-
-  socket.on('screen_chunk', ({ channelId, chunk, userId }) => {
-    socket.to(`voice:${channelId}`).emit('screen_chunk', {
-      chunk,
-      userId: socket.userId,
-      username: user?.username || 'کاربر'
-    });
+  socket.on('screen_request', ({ to }) => {
+    io.to(to).emit('screen_request', { from: socket.id });
+  });
+  socket.on('screen_offer', ({ to, offer }) => {
+    io.to(to).emit('screen_offer', { from: socket.id, offer });
+  });
+  socket.on('screen_answer', ({ to, answer }) => {
+    io.to(to).emit('screen_answer', { from: socket.id, answer });
+  });
+  socket.on('screen_ice', ({ to, candidate }) => {
+    io.to(to).emit('screen_ice', { from: socket.id, candidate });
   });
 
   // Ping check - respond immediately
