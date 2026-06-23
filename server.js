@@ -12,17 +12,10 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json());
-// TEST ROUTE
-app.get('/app', (req, res) => {
-  res.send('<h1 style="color:#5865f2;font-family:sans-serif;text-align:center;margin-top:40vh">GapHub React ✅</h1>');
-});
-// Serve React app
-app.use('/app', express.static(path.join(__dirname, 'public', 'app')));
-app.get('/app/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'));
-});
 // General static files
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve React app
+app.use('/app', express.static(path.join(__dirname, 'public', 'app')));
 
 // ─── FILE-BASED STORAGE ──────────────────────────────────────────────────────
 // Railway persistent volume at /data, fallback to local
