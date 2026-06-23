@@ -556,7 +556,7 @@ function leaveVoice(){
 function toggleVcMic(){
   isMuted=!isMuted;
   if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
-  const b=$('vcMuteBtn');if(b){b.textContent=isMuted?'🔇':'🎤';b.style.background=isMuted?'rgba(239,68,68,.3)':'';}
+  const b=$('vcMuteBtn');if(b){b.classList.toggle('muted',isMuted);}
   socket.emit('voice_mute',{channelId:currentVoiceId,muted:isMuted});
   showToast(isMuted?'🔇 میوت':'🎤 آنمیوت');
 }
@@ -567,7 +567,7 @@ function toggleMic(){
 }
 function toggleDeafen(){
   isDeafened=!isDeafened;Object.values(peerAudios).forEach(a=>a.muted=isDeafened);
-  const b=$('deafenBtn');if(b){b.textContent=isDeafened?'🔕':'🔊';b.style.background=isDeafened?'rgba(239,68,68,.3)':'';}
+  const b=$('deafenBtn');if(b){b.classList.toggle('muted',isDeafened);}
   showToast(isDeafened?'🔕 صدا قطع':'🔊 صدا وصل');
 }
 function setLocalVolume(uid,vol){
@@ -1742,6 +1742,7 @@ async function startScreenShare() {
     screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
     socket.emit('screen_share_start', { channelId: currentVoiceId });
     $('voiceView')?.classList.add('has-share');
+    $('vcScreenGrid')?.classList.remove('hidden');
     showToast('🖥 اشتراک صفحه شروع شد');
   } catch(e) {
     if (e.name !== 'NotAllowedError') showToast('خطا: ' + e.message);
@@ -1840,4 +1841,22 @@ function registerScreenShareEvents() {
     const pc = screenPCs[from];
     if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
+}
+
+// ─── CAMERA ───────────────────────────────────────────────────────────────────
+let cameraStream = null;
+async function toggleCamera() {
+  const btn = $('cameraBtn');
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+    if (btn) btn.classList.remove('active');
+    showToast('📷 دوربین خاموش شد');
+  } else {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (btn) btn.classList.add('active');
+      showToast('📷 دوربین روشن شد');
+    } catch(e) { showToast('دسترسی به دوربین نبود'); }
+  }
 }
