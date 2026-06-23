@@ -12,12 +12,16 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-// Serve React app
+// Serve React app FIRST (before general static)
 app.use('/app', express.static(path.join(__dirname, 'public', 'app')));
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'));
+});
 app.get('/app/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'));
 });
+// General static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── FILE-BASED STORAGE ──────────────────────────────────────────────────────
 // Railway persistent volume at /data, fallback to local
