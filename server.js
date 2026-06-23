@@ -323,6 +323,41 @@ io.on('connection', socket => {
     socket.to(`channel:${channelId}`).emit('typing', { username: user.username, channelId });
   });
 
+
+  // Bot Music
+  socket.on('bot_search', async ({ query, channelId, username }) => {
+    try {
+      const https = require('https');
+      const encoded = encodeURIComponent(query);
+      const apiUrl = `https://itunes.apple.com/search?term=${encoded}&media=music&limit=5`;
+      const result = await new Promise((resolve, reject) => {
+        https.get(apiUrl, (res) => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); }});
+        }).on('error', reject);
+      });
+      if (!result.results || !result.results.length) {
+        io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ نتیجه‌ای برای «${query}» پیدا نشد` });
+        return;
+      }
+      const track = result.results[0];
+      const title = `${track.trackName} — ${track.artistName}`;
+      if (!track.previewUrl) {
+        io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ پیش‌نمایش موجود نیست` });
+        return;
+      }
+      io.to(`channel:${channelId}`).emit('bot_play', { title, url: track.previewUrl, requestedBy: username });
+    } catch(e) {
+      io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در جستجو' });
+    }
+  });
+
+  socket.on('bot_command', ({ cmd, channelId }) => {
+    if (cmd === 'stop') io.to(`channel:${channelId}`).emit('bot_stop');
+    if (cmd === 'skip') io.to(`channel:${channelId}`).emit('bot_skip');
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     delete onlineSockets[socket.userId];
@@ -337,3 +372,5 @@ io.on('connection', socket => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 محفل روی http://localhost:${PORT}`));
+
+// این خط آخر فایله — bot search handler در socket.io اضافه میشه

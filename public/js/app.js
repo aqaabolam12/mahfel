@@ -1,63 +1,57 @@
 // ─── STATE ───────────────────────────────────────────────────────────────────
-let socket=null, me=null, token=null;
-let currentServerId='default', currentChannelId='general', currentChannelType='text';
-let currentVoiceId=null, myServerRole='member';
-let onlineUsers={}, peerConnections={}, localStream=null;
-let isMuted=false, isDeafened=false, isPlaying=false;
-let tracks=[], currentTrackIdx=0, authMode='login';
-let memberListOpen=false, lastTypingSent=0;
-let myServers=[], serverMembers={};
-let audioContext=null, analyserNode=null, speakingInterval=null;
+let socket=null,me=null,token=null;
+let currentServerId='default',currentChannelId='general',currentChannelType='text';
+let currentVoiceId=null,myServerRole='member';
+let onlineUsers={},peerConnections={},localStream=null;
+let isMuted=false,isDeafened=false,isPlaying=false;
+let tracks=[],currentTrackIdx=0,authMode='login';
+let memberListOpen=false,lastTypingSent=0;
+let myServers=[],serverMembers={};
+let audioContext=null,analyserNode=null,speakingInterval=null;
+let botAudio=null,botPlaying=false;
 
 const EMOJIS=['😀','😂','🥰','😎','🤔','😅','🙄','😭','🔥','❤️','👍','👎','🎉','🎵','🎮','💻','🌟','⚡','🚀','💡','🙏','👏','😍','🤣','😊','😇','🥳','😤','💪','🤝'];
-
-const THEMES = {
-  purple: { accent:'#7c6af7', accent2:'#a855f7', bg:'#0d0f14', bgChat:'#1a2035' },
-  blue:   { accent:'#3b82f6', accent2:'#06b6d4', bg:'#0a0f1e', bgChat:'#0f1a2e' },
-  green:  { accent:'#22c55e', accent2:'#10b981', bg:'#0a1a0f', bgChat:'#0f1f14' },
-  red:    { accent:'#ef4444', accent2:'#f97316', bg:'#1a0a0a', bgChat:'#1f0f0f' },
-  dark:   { accent:'#94a3b8', accent2:'#64748b', bg:'#080808', bgChat:'#111111' },
+const THEMES={
+  purple:{accent:'#7c6af7',accent2:'#a855f7',bg:'#0d0f14',bgChat:'#1a2035'},
+  blue:  {accent:'#3b82f6',accent2:'#06b6d4',bg:'#0a0f1e',bgChat:'#0f1a2e'},
+  green: {accent:'#22c55e',accent2:'#10b981',bg:'#0a1a0f',bgChat:'#0f1f14'},
+  red:   {accent:'#ef4444',accent2:'#f97316',bg:'#1a0a0a',bgChat:'#1f0f0f'},
+  dark:  {accent:'#94a3b8',accent2:'#64748b',bg:'#080808',bgChat:'#111111'},
 };
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
-function switchTab(mode) {
-  authMode = mode;
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active',(i===0&&mode==='login')||(i===1&&mode==='register')));
+function switchTab(mode){
+  authMode=mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&mode==='login')||(i===1&&mode==='register')));
   document.getElementById('authError').textContent='';
 }
-
-async function doAuth() {
+async function doAuth(){
   const username=document.getElementById('authUser').value.trim();
   const password=document.getElementById('authPass').value.trim();
-  if (!username||!password){showError('نام‌کاربری و رمز الزامیه');return;}
+  if(!username||!password){showError('نام‌کاربری و رمز الزامیه');return;}
   const url=authMode==='login'?'/api/login':'/api/register';
-  try {
+  try{
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
     const data=await res.json();
-    if (!data.ok){showError(data.msg);return;}
-    me=data.user; token=data.token;
+    if(!data.ok){showError(data.msg);return;}
+    me=data.user;token=data.token;
     localStorage.setItem('mahfel_token',token);
     localStorage.setItem('mahfel_user',JSON.stringify(me));
     startApp();
-  } catch(e){showError('خطا در اتصال');}
+  }catch(e){showError('خطا در اتصال');}
 }
 function showError(msg){document.getElementById('authError').textContent=msg;}
-
 window.onload=async()=>{
-  buildEmojiPicker();
-  buildThemePicker();
+  buildEmojiPicker();buildThemePicker();
   const t=localStorage.getItem('mahfel_token');
   const u=localStorage.getItem('mahfel_user');
   if(t&&u){token=t;me=JSON.parse(u);startApp();}
 };
-
 function startApp(){
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   applyTheme(localStorage.getItem('mahfel_theme')||'purple');
-  connectSocket();
-  updateMyUI();
-  loadServers();
+  connectSocket();updateMyUI();loadServers();
 }
 function updateMyUI(){
   if(!me)return;
@@ -75,13 +69,10 @@ function doLogout(){localStorage.removeItem('mahfel_token');localStorage.removeI
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 function buildThemePicker(){
-  const c=document.getElementById('themeColors');
-  if(!c)return;
+  const c=document.getElementById('themeColors');if(!c)return;
   Object.entries(THEMES).forEach(([name,t])=>{
     const btn=document.createElement('div');
-    btn.className='theme-dot';
-    btn.style.background=t.accent;
-    btn.title=name;
+    btn.className='theme-dot';btn.style.background=t.accent;btn.title=name;
     btn.onclick=()=>{applyTheme(name);localStorage.setItem('mahfel_theme',name);showToast('تم تغییر کرد ✅');};
     c.appendChild(btn);
   });
@@ -89,10 +80,8 @@ function buildThemePicker(){
 function applyTheme(name){
   const t=THEMES[name]||THEMES.purple;
   const r=document.documentElement.style;
-  r.setProperty('--accent',t.accent);
-  r.setProperty('--accent2',t.accent2);
-  r.setProperty('--bg-deep',t.bg);
-  r.setProperty('--bg-chat',t.bgChat);
+  r.setProperty('--accent',t.accent);r.setProperty('--accent2',t.accent2);
+  r.setProperty('--bg-deep',t.bg);r.setProperty('--bg-chat',t.bgChat);
   r.setProperty('--accent-glow',t.accent+'55');
 }
 
@@ -101,12 +90,17 @@ function connectSocket(){
   socket=io({auth:{token}});
   socket.on('connect_error',err=>{if(err.message==='auth'){localStorage.removeItem('mahfel_token');location.reload();}});
   socket.on('connect',()=>socket.emit('join_channel',{channelId:'general'}));
-  socket.on('message',({channelId,msg})=>{if(channelId===currentChannelId)appendMessage(msg);});
+  socket.on('message',({channelId,msg})=>{
+    if(channelId===currentChannelId){
+      appendMessage(msg);
+      handleBotCommand(msg);
+    }
+  });
   socket.on('history',({channelId,messages})=>{
     if(channelId!==currentChannelId)return;
     const area=document.getElementById('messagesArea');
     area.innerHTML='';
-    if(!messages.length) area.innerHTML='<div class="sys-msg">اولین پیام رو بفرست! 👋</div>';
+    if(!messages.length)area.innerHTML='<div class="sys-msg">اولین پیام رو بفرست! 👋</div>';
     else messages.forEach(m=>appendMessage(m,true));
     area.scrollTop=area.scrollHeight;
   });
@@ -121,8 +115,7 @@ function connectSocket(){
     if(channelId===currentVoiceId)renderVoiceParticipants(users);
   });
   socket.on('voice_speaking',({userId,speaking})=>{
-    const el=document.querySelector(`.vc-avatar[data-uid="${userId}"]`);
-    if(el)el.classList.toggle('speaking',speaking);
+    document.querySelectorAll(`.vc-avatar[data-uid="${userId}"]`).forEach(el=>el.classList.toggle('speaking',speaking));
   });
   socket.on('channel_created',ch=>{
     const srv=myServers.find(s=>s.id===ch.serverId);
@@ -130,23 +123,26 @@ function connectSocket(){
     if(ch.serverId===currentServerId)renderChannels();
   });
   socket.on('role_update',({serverId,userId,role})=>{
-    if(userId===me?.id&&serverId===currentServerId){myServerRole=role;renderChannels();}
-    if(serverMembers[serverId]){
-      const m=serverMembers[serverId].find(m=>m.id===userId);
-      if(m)m.serverRole=role;
-      renderMemberList();
-    }
+    if(userId===me?.id&&serverId===currentServerId)myServerRole=role;
+    if(serverMembers[serverId]){const m=serverMembers[serverId].find(m=>m.id===userId);if(m)m.serverRole=role;}
+    renderMemberList();renderChannels();
   });
   socket.on('kicked',({serverId})=>{
     showToast('از سرور اخراج شدی!');
     myServers=myServers.filter(s=>s.id!==serverId);
-    renderServerBar();
-    if(currentServerId===serverId)selectServer('default');
+    renderServerBar();if(currentServerId===serverId)selectServer('default');
   });
-  socket.on('banned',({serverId})=>{showToast('بن شدی!');});
-  socket.on('member_kicked',({userId,serverId})=>{
-    if(serverMembers[serverId])serverMembers[serverId]=serverMembers[serverId].filter(m=>m.id!==userId);
+  socket.on('member_kicked',({userId})=>{
+    if(serverMembers[currentServerId])serverMembers[currentServerId]=serverMembers[currentServerId].filter(m=>m.id!==userId);
     renderMemberList();
+  });
+  socket.on('bot_play',({title,url,requestedBy})=>{
+    appendBotMessage(`🎵 داره پخش میشه: **${title}** — درخواست از ${requestedBy}`);
+    botPlayAudio(url);
+  });
+  socket.on('bot_stop',()=>{
+    if(botAudio){botAudio.pause();botAudio=null;botPlaying=false;}
+    appendBotMessage('⏹ موزیک متوقف شد');
   });
   // WebRTC
   socket.on('voice_user_joined',async({user:u,socketId})=>{
@@ -166,20 +162,65 @@ function connectSocket(){
     socket.emit('rtc_answer',{to:from,answer});
   });
   socket.on('rtc_answer',async({from,answer})=>{const pc=peerConnections[from];if(pc)await pc.setRemoteDescription(answer);});
-  socket.on('rtc_candidate',async({from,candidate})=>{const pc=peerConnections[from];if(pc)await pc.addIceCandidate(candidate);});
+  socket.on('rtc_candidate',async({from,candidate})=>{const pc=peerConnections[from];if(pc)try{await pc.addIceCandidate(candidate);}catch(e){}});
 }
-
 function createPC(socketId){
   const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
   peerConnections[socketId]=pc;
   pc.onicecandidate=e=>{if(e.candidate)socket.emit('rtc_candidate',{to:socketId,candidate:e.candidate});};
   pc.ontrack=e=>{
-    const audio=new Audio();
-    audio.srcObject=e.streams[0];
-    audio.autoplay=true;
-    audio.play().catch(()=>{});
+    const audio=new Audio();audio.srcObject=e.streams[0];audio.autoplay=true;
+    document.body.appendChild(audio);audio.play().catch(()=>{});
   };
   return pc;
+}
+
+// ─── BOT COMMANDS ─────────────────────────────────────────────────────────────
+function handleBotCommand(msg){
+  if(msg.userId===me?.id){
+    const text=msg.text.trim();
+    // !p یا p_ برای پخش
+    if(text.startsWith('!p ')||text.startsWith('p_')){
+      const query=text.startsWith('!p ')?text.slice(3):text.slice(2);
+      socket.emit('bot_search',{query:query.trim(),channelId:currentChannelId,username:me.username});
+      appendBotMessage(`🔍 دنبال **${query.trim()}** میگردم...`);
+    }
+    // !stop
+    else if(text==='!stop'||text==='استاپ'){
+      socket.emit('bot_command',{cmd:'stop',channelId:currentChannelId});
+    }
+    // !skip
+    else if(text==='!skip'||text==='اسکیپ'){
+      socket.emit('bot_command',{cmd:'skip',channelId:currentChannelId});
+    }
+    // !q یا !queue
+    else if(text==='!q'||text==='!queue'){
+      socket.emit('bot_command',{cmd:'queue',channelId:currentChannelId});
+    }
+  }
+}
+function appendBotMessage(text){
+  const area=document.getElementById('messagesArea');
+  const div=document.createElement('div');
+  div.className='msg-group';
+  div.innerHTML=`
+    <div class="msg-avatar" style="background:linear-gradient(135deg,#7c6af7,#a855f7)">🎵</div>
+    <div class="msg-body">
+      <div class="msg-header">
+        <span class="msg-uname" style="color:#7c6af7">بات موزیک</span>
+        <span class="msg-time">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</span>
+      </div>
+      <div class="msg-text">${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+    </div>`;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+function botPlayAudio(url){
+  if(botAudio){botAudio.pause();}
+  botAudio=new Audio(url);
+  botAudio.crossOrigin='anonymous';
+  botAudio.play().then(()=>{botPlaying=true;}).catch(e=>{
+    appendBotMessage('❌ نتونستم پخش کنم — لینک مستقیم MP3 لازمه');
+  });
 }
 
 // ─── SERVERS ─────────────────────────────────────────────────────────────────
@@ -191,14 +232,12 @@ async function loadServers(){
   }catch(e){renderServerBar();renderChannels();}
 }
 function renderServerBar(){
-  const extra=document.getElementById('extraServers');
-  extra.innerHTML='';
+  const extra=document.getElementById('extraServers');extra.innerHTML='';
   myServers.forEach(s=>{
     const el=document.createElement('div');
     el.className='server-icon'+(s.id===currentServerId?' active':'');
     el.id=`si-${s.id}`;el.title=s.name;el.textContent=s.icon;
-    el.onclick=()=>selectServer(s.id);
-    extra.appendChild(el);
+    el.onclick=()=>selectServer(s.id);extra.appendChild(el);
   });
 }
 async function selectServer(id){
@@ -207,8 +246,7 @@ async function selectServer(id){
   const el=document.getElementById(`si-${id}`);if(el)el.classList.add('active');
   const srv=myServers.find(s=>s.id===id);
   document.getElementById('sidebarServerName').textContent=srv?.name||id;
-  renderChannels();
-  socket.emit('join_server',{serverId:id});
+  renderChannels();socket.emit('join_server',{serverId:id});
   await loadMembers(id);
 }
 async function loadMembers(serverId){
@@ -219,32 +257,22 @@ async function loadMembers(serverId){
       serverMembers[serverId]=data.members;
       const mine=data.members.find(m=>m.id===me?.id);
       myServerRole=mine?.serverRole||'member';
-      renderMemberList();
+      renderMemberList();renderChannels();
     }
   }catch(e){}
 }
 function renderChannels(){
-  const srv=myServers.find(s=>s.id===currentServerId);
-  if(!srv)return;
+  const srv=myServers.find(s=>s.id===currentServerId);if(!srv)return;
   const textChs=srv.channels.filter(c=>c.type==='text');
   const voiceChs=srv.channels.filter(c=>c.type==='voice');
   const canAdd=['owner','admin'].includes(myServerRole);
   document.getElementById('channelList').innerHTML=`
     <div class="ch-group">
-      <div class="ch-group-label">
-        <span>▸ متنی</span>
-        ${canAdd?`<span class="ch-add" onclick="openModal('addChannelModal')">＋</span>`:''}
-      </div>
-      ${textChs.map(c=>`
-        <div class="ch-item ${c.id===currentChannelId?'active':''}" onclick="selectChannel('${c.id}','${c.name}','text')">
-          <span class="ch-icon">💬</span>${c.name}
-        </div>`).join('')}
+      <div class="ch-group-label"><span>▸ متنی</span>${canAdd?`<span class="ch-add" onclick="openModal('addChannelModal')">＋</span>`:''}</div>
+      ${textChs.map(c=>`<div class="ch-item ${c.id===currentChannelId?'active':''}" onclick="selectChannel('${c.id}','${c.name}','text')"><span class="ch-icon">💬</span>${c.name}</div>`).join('')}
     </div>
     <div class="ch-group">
-      <div class="ch-group-label">
-        <span>▸ ویس</span>
-        ${canAdd?`<span class="ch-add" onclick="openModal('addChannelModal')">＋</span>`:''}
-      </div>
+      <div class="ch-group-label"><span>▸ ویس</span>${canAdd?`<span class="ch-add" onclick="openModal('addChannelModal')">＋</span>`:''}</div>
       ${voiceChs.map(c=>`
         <div class="ch-item ${c.id===currentChannelId?'active':''}" onclick="selectChannel('${c.id}','${c.name}','voice')">
           <span class="ch-icon">🔊</span>${c.name}
@@ -252,8 +280,6 @@ function renderChannels(){
         </div>`).join('')}
     </div>`;
 }
-
-// ─── CHANNELS ─────────────────────────────────────────────────────────────────
 function selectChannel(id,name,type){
   currentChannelId=id;currentChannelType=type;
   document.getElementById('headerName').textContent=name;
@@ -275,8 +301,7 @@ function selectChannel(id,name,type){
 // ─── MESSAGING ────────────────────────────────────────────────────────────────
 function sendMessage(){
   const inp=document.getElementById('msgInput');
-  const text=inp.value.trim();
-  if(!text||!socket)return;
+  const text=inp.value.trim();if(!text||!socket)return;
   socket.emit('message',{channelId:currentChannelId,text});
   inp.value='';
 }
@@ -289,8 +314,7 @@ function appendMessage(msg,noScroll=false){
   const area=document.getElementById('messagesArea');
   const time=new Date(msg.time);
   const ts=`${time.getHours()}:${String(time.getMinutes()).padStart(2,'0')}`;
-  const div=document.createElement('div');
-  div.className='msg-group';
+  const div=document.createElement('div');div.className='msg-group';
   div.innerHTML=`
     <div class="msg-avatar" style="background:linear-gradient(135deg,${msg.color},${msg.color}cc)">${msg.avatar}</div>
     <div class="msg-body">
@@ -300,8 +324,7 @@ function appendMessage(msg,noScroll=false){
       </div>
       <div class="msg-text">${escapeHtml(msg.text)}</div>
     </div>`;
-  area.appendChild(div);
-  if(!noScroll)area.scrollTop=area.scrollHeight;
+  area.appendChild(div);if(!noScroll)area.scrollTop=area.scrollHeight;
 }
 function escapeHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let typingTimer=null;
@@ -314,15 +337,13 @@ function showTyping(username){
 // ─── VOICE ────────────────────────────────────────────────────────────────────
 async function joinVoice(channelId){
   try{
-    localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    localStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
     startSpeakingDetection();
-    socket.emit('join_voice',{channelId});
-    currentVoiceId=channelId;
+    socket.emit('join_voice',{channelId});currentVoiceId=channelId;
     showToast('به ویس پیوستی 🎤');
   }catch(e){
-    showToast('دسترسی به میکروفون نبود — فقط گوش میدی');
-    socket.emit('join_voice',{channelId});
-    currentVoiceId=channelId;
+    showToast('دسترسی به میکروفون نبود');
+    socket.emit('join_voice',{channelId});currentVoiceId=channelId;
   }
 }
 function startSpeakingDetection(){
@@ -330,8 +351,7 @@ function startSpeakingDetection(){
   try{
     audioContext=new AudioContext();
     const src=audioContext.createMediaStreamSource(localStream);
-    analyserNode=audioContext.createAnalyser();
-    analyserNode.fftSize=512;
+    analyserNode=audioContext.createAnalyser();analyserNode.fftSize=512;
     src.connect(analyserNode);
     const data=new Uint8Array(analyserNode.frequencyBinCount);
     let wasSpeaking=false;
@@ -339,21 +359,16 @@ function startSpeakingDetection(){
       if(!analyserNode||isMuted)return;
       analyserNode.getByteFrequencyData(data);
       const avg=data.reduce((a,b)=>a+b,0)/data.length;
-      const speaking=avg>15;
-      if(speaking!==wasSpeaking){
-        wasSpeaking=speaking;
-        socket.emit('voice_speaking',{channelId:currentVoiceId,speaking});
-      }
-    },100);
+      const speaking=avg>12;
+      if(speaking!==wasSpeaking){wasSpeaking=speaking;socket.emit('voice_speaking',{channelId:currentVoiceId,speaking});}
+    },150);
   }catch(e){}
 }
 function leaveVoice(){
   if(currentVoiceId)socket.emit('leave_voice',{channelId:currentVoiceId});
-  currentVoiceId=null;
-  clearInterval(speakingInterval);
+  currentVoiceId=null;clearInterval(speakingInterval);
   if(audioContext){audioContext.close();audioContext=null;}
-  Object.values(peerConnections).forEach(pc=>pc.close());
-  peerConnections={};
+  Object.values(peerConnections).forEach(pc=>pc.close());peerConnections={};
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   document.getElementById('voiceView').classList.add('hidden');
   document.getElementById('chatView').classList.remove('hidden');
@@ -362,16 +377,25 @@ function leaveVoice(){
 }
 function toggleVcMic(){
   isMuted=!isMuted;
-  if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
-  document.getElementById('vcMuteBtn').textContent=isMuted?'🔇':'🎤';
+  if(localStream)localStream.getAudioTracks().forEach(t=>{t.enabled=!isMuted;});
+  const btn=document.getElementById('vcMuteBtn');
+  btn.textContent=isMuted?'🔇':'🎤';
+  btn.style.background=isMuted?'rgba(239,68,68,0.3)':'';
   socket.emit('voice_mute',{channelId:currentVoiceId,muted:isMuted});
-  showToast(isMuted?'میکروفون خاموش':'میکروفون روشن');
+  showToast(isMuted?'🔇 میکروفون خاموش':'🎤 میکروفون روشن');
 }
-function toggleDeafen(){isDeafened=!isDeafened;showToast(isDeafened?'صدا قطع':'صدا وصل');}
+function toggleDeafen(){
+  isDeafened=!isDeafened;
+  const btn=document.getElementById('deafenBtn');
+  btn.textContent=isDeafened?'🔕':'🔊';
+  btn.style.background=isDeafened?'rgba(239,68,68,0.3)':'';
+  showToast(isDeafened?'🔕 صدا قطع':'🔊 صدا وصل');
+}
 function toggleMic(){
   isMuted=!isMuted;
-  if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
+  if(localStream)localStream.getAudioTracks().forEach(t=>{t.enabled=!isMuted;});
   document.getElementById('micBtn').textContent=isMuted?'🔇':'🎤';
+  showToast(isMuted?'🔇 میوت شدی':'🎤 آنمیوت شدی');
 }
 function renderVoiceParticipants(users){
   const area=document.getElementById('vcParticipants');
@@ -381,17 +405,12 @@ function renderVoiceParticipants(users){
       <div class="vc-avatar ${u.speaking?'speaking':''}" data-uid="${u.id}" style="background:linear-gradient(135deg,${u.color},${u.color}cc)">
         ${u.muted?'🔇':u.avatar}
       </div>
-      <div class="vc-uname">${u.username}</div>
+      <div class="vc-uname">${u.username}${u.muted?' 🔇':''}</div>
     </div>`).join('');
 }
 function updateVoiceUsersSidebar(channelId,users){
-  const el=document.getElementById(`vul-${channelId}`);
-  if(!el)return;
-  el.innerHTML=users.map(u=>`
-    <div class="vu-item">
-      <div class="vu-avatar" style="background:${u.color}">${u.muted?'🔇':u.avatar}</div>
-      ${u.username}
-    </div>`).join('');
+  const el=document.getElementById(`vul-${channelId}`);if(!el)return;
+  el.innerHTML=users.map(u=>`<div class="vu-item"><div class="vu-avatar" style="background:${u.color}">${u.muted?'🔇':u.avatar}</div>${u.username}</div>`).join('');
 }
 
 // ─── MEMBER LIST ─────────────────────────────────────────────────────────────
@@ -403,28 +422,26 @@ function toggleMemberList(){
 function renderMemberList(){
   const list=document.getElementById('memberItems');
   const members=serverMembers[currentServerId]||[];
-  const canMod=['owner','admin','mod'].includes(myServerRole);
   list.innerHTML=members.map(u=>{
     const isOnline=!!onlineUsers[u.id];
-    const roleLabel=u.serverRole==='owner'?'👑':u.serverRole==='admin'?'🛡️':u.serverRole==='mod'?'🔨':'';
-    return `<div class="ml-user" onclick="openUserMenu('${u.id}','${u.username}','${u.serverRole}')">
+    const roleIcon=u.serverRole==='owner'?'👑':u.serverRole==='admin'?'🛡️':u.serverRole==='mod'?'🔨':'';
+    return `<div class="ml-user" onclick="openUserMenu('${u.id}','${u.username}','${u.serverRole||'member'}')">
       <div class="ml-avatar ${isOnline?'online':''}" style="background:${u.color}">${u.avatar}</div>
-      <div>
-        <div class="ml-uname">${u.username} ${roleLabel}</div>
-        <div style="font-size:11px;color:var(--text-muted)">${isOnline?'آنلاین':'آفلاین'}</div>
-      </div>
+      <div><div class="ml-uname">${u.username} ${roleIcon}</div>
+      <div style="font-size:11px;color:var(--text-muted)">${isOnline?'🟢 آنلاین':'⚫ آفلاین'}</div></div>
     </div>`;
   }).join('')||'<div style="color:var(--text-muted);font-size:13px;padding:8px">اعضایی نیست</div>';
 }
 
-// ─── USER CONTEXT MENU ───────────────────────────────────────────────────────
+// ─── USER MENU ───────────────────────────────────────────────────────────────
 function openUserMenu(userId,username,role){
   if(userId===me?.id)return;
   const canMod=['owner','admin'].includes(myServerRole);
-  if(!canMod)return;
+  if(!canMod){showToast('دسترسی نداری');return;}
   document.getElementById('ctxUsername').textContent=username;
   document.getElementById('ctxUserId').value=userId;
   document.getElementById('ctxUserRole').value=role;
+  document.getElementById('roleSelect').value=role==='owner'?'admin':role||'member';
   openModal('userMenuModal');
 }
 async function setRole(){
@@ -440,19 +457,18 @@ async function setRole(){
 }
 async function kickUser(){
   const uid=document.getElementById('ctxUserId').value;
-  const res=await fetch(`/api/servers/${currentServerId}/members/${uid}/kick`,{
-    method:'POST',headers:{'Authorization':`Bearer ${token}`}
-  });
+  const name=document.getElementById('ctxUsername').textContent;
+  if(!confirm(`${name} رو کیک کنی؟`))return;
+  const res=await fetch(`/api/servers/${currentServerId}/members/${uid}/kick`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});
   const data=await res.json();
   if(data.ok){closeModal('userMenuModal');showToast('کیک شد ✅');await loadMembers(currentServerId);}
   else showToast(data.msg||'خطا');
 }
 async function banUser(){
   const uid=document.getElementById('ctxUserId').value;
-  if(!confirm('مطمئنی بن بشه؟'))return;
-  const res=await fetch(`/api/servers/${currentServerId}/members/${uid}/ban`,{
-    method:'POST',headers:{'Authorization':`Bearer ${token}`}
-  });
+  const name=document.getElementById('ctxUsername').textContent;
+  if(!confirm(`${name} رو بن کنی؟`))return;
+  const res=await fetch(`/api/servers/${currentServerId}/members/${uid}/ban`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});
   const data=await res.json();
   if(data.ok){closeModal('userMenuModal');showToast('بن شد ✅');await loadMembers(currentServerId);}
   else showToast(data.msg||'خطا');
@@ -467,24 +483,18 @@ async function createServer(){
   const data=await res.json();
   if(data.ok){
     myServers.push(data.server);renderServerBar();
-    const inviteUrl=`${location.origin}?join=${data.server.id}`;
-    document.getElementById('inviteLink').textContent=inviteUrl;
+    document.getElementById('inviteLink').textContent=`${location.origin}?join=${data.server.id}`;
     document.getElementById('serverInviteSection').style.display='block';
-    document.getElementById('newServerName').value='';
-    showToast('سرور ساخته شد! 🎉');
+    document.getElementById('newServerName').value='';showToast('سرور ساخته شد! 🎉');
   }
 }
 function copyInvite(){navigator.clipboard.writeText(document.getElementById('inviteLink').textContent);showToast('لینک کپی شد ✅');}
 async function joinServer(){
-  const id=document.getElementById('joinServerId').value.trim();
-  if(!id)return;
+  const id=document.getElementById('joinServerId').value.trim();if(!id)return;
   const res=await fetch(`/api/servers/${id}/join`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});
   const data=await res.json();
-  if(data.ok){
-    if(!myServers.find(s=>s.id===data.server.id))myServers.push(data.server);
-    renderServerBar();closeModal('joinServerModal');selectServer(data.server.id);
-    showToast(`به ${data.server.name} پیوستی!`);
-  }else showToast(data.msg||'سرور پیدا نشد');
+  if(data.ok){if(!myServers.find(s=>s.id===data.server.id))myServers.push(data.server);renderServerBar();closeModal('joinServerModal');selectServer(data.server.id);showToast(`به ${data.server.name} پیوستی!`);}
+  else showToast(data.msg||'سرور پیدا نشد');
 }
 async function addChannel(){
   const name=document.getElementById('newChName').value.trim();
@@ -505,16 +515,14 @@ async function saveProfile(){
   if(data.ok){me={...me,...data.user};localStorage.setItem('mahfel_user',JSON.stringify(me));updateMyUI();closeModal('profileModal');showToast('پروفایل ذخیره شد ✅');}
 }
 
-// ─── MUSIC ───────────────────────────────────────────────────────────────────
+// ─── MUSIC PLAYER ─────────────────────────────────────────────────────────────
 const audio=new Audio();
 audio.addEventListener('ended',nextTrack);
 audio.addEventListener('timeupdate',updateProgress);
 function addMusic(){
-  const url=document.getElementById('musicUrl').value.trim();
-  if(!url){showToast('یه لینک بذار');return;}
+  const url=document.getElementById('musicUrl').value.trim();if(!url){showToast('یه لینک بذار');return;}
   const name=url.split('/').pop()||'آهنگ جدید';
-  tracks.push({name,url,artist:''});
-  document.getElementById('musicUrl').value='';
+  tracks.push({name,url});document.getElementById('musicUrl').value='';
   renderMusicList();showToast('آهنگ اضافه شد');
   if(tracks.length===1)playTrack(0);
 }
@@ -525,7 +533,7 @@ function renderMusicList(){
     <div class="track-item ${i===currentTrackIdx?'playing':''}" onclick="playTrack(${i})">
       <div class="track-num">${i===currentTrackIdx?'▶':(i+1)}</div>
       <div class="track-info"><div class="track-name">${t.name}</div></div>
-      <div class="track-dur" onclick="removeTrack(event,${i})">✕</div>
+      <div class="track-dur" style="cursor:pointer" onclick="removeTrack(event,${i})">✕</div>
     </div>`).join('');
 }
 function removeTrack(e,i){e.stopPropagation();tracks.splice(i,1);if(currentTrackIdx>=tracks.length)currentTrackIdx=0;renderMusicList();}
@@ -556,10 +564,6 @@ document.addEventListener('click',e=>{if(!e.target.closest('.input-area')){emoji
 function openModal(id){
   document.getElementById(id).classList.remove('hidden');
   if(id==='musicModal')renderMusicList();
-  if(id==='userMenuModal'){
-    const role=document.getElementById('ctxUserRole').value;
-    document.getElementById('roleSelect').value=role==='owner'?'admin':role;
-  }
 }
 function closeModal(id){
   document.getElementById(id).classList.add('hidden');
@@ -574,7 +578,7 @@ function showToast(msg){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ─── INVITE LINK ─────────────────────────────────────────────────────────────
+// ─── INVITE ───────────────────────────────────────────────────────────────────
 const inviteServerId=new URLSearchParams(location.search).get('join');
 if(inviteServerId){
   window.addEventListener('load',()=>{
@@ -582,12 +586,7 @@ if(inviteServerId){
       if(!token)return;
       const res=await fetch(`/api/servers/${inviteServerId}/join`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});
       const data=await res.json();
-      if(data.ok){
-        if(!myServers.find(s=>s.id===data.server.id))myServers.push(data.server);
-        renderServerBar();selectServer(data.server.id);
-        showToast(`به ${data.server.name} پیوستی! 🎉`);
-        history.replaceState({},'','/');
-      }
+      if(data.ok){if(!myServers.find(s=>s.id===data.server.id))myServers.push(data.server);renderServerBar();selectServer(data.server.id);showToast(`به ${data.server.name} پیوستی! 🎉`);history.replaceState({},'','/');}
     },1500);
   });
 }

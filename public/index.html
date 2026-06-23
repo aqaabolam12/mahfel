@@ -79,7 +79,7 @@
         <div class="vc-controls">
           <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
           <button class="vc-btn red" onclick="leaveVoice()">📵 خروج</button>
-          <button class="vc-btn" onclick="toggleDeafen()">🔊</button>
+          <button class="vc-btn" id="deafenBtn" onclick="toggleDeafen()">🔊</button>
         </div>
       </div>
 
@@ -90,7 +90,7 @@
         <div class="input-area">
           <div class="emoji-picker" id="emojiPicker"></div>
           <button class="icon-btn" onclick="toggleEmoji()">😊</button>
-          <input id="msgInput" class="msg-input" placeholder="پیام بفرست..." onkeydown="handleKey(event)" oninput="handleTyping()">
+          <input id="msgInput" class="msg-input" placeholder="پیام بفرست... | !p اسم آهنگ برای بات موزیک" onkeydown="handleKey(event)" oninput="handleTyping()">
           <button class="send-btn" onclick="sendMessage()">ارسال</button>
         </div>
       </div>
