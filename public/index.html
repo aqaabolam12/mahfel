@@ -34,6 +34,7 @@
 </div>
 
 <!-- ═══ APP ═══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebars()"></div>
 <div id="app" class="app hidden">
 
   <!-- SERVER BAR -->
@@ -70,6 +71,7 @@
   <!-- MAIN -->
   <div class="main-content">
     <div class="chat-header">
+      <button class="ch-toggle-btn" onclick="toggleChannelSidebar()">☰</button>
       <span id="headerIcon" class="h-icon">＃</span>
       <span id="headerName" class="h-name">عمومی</span>
       <span id="headerType" class="h-type">متن</span>
@@ -130,6 +132,12 @@
 
     <div id="profileUsernameDisplay" class="profile-uname-big">—</div>
 
+    <!-- دکمه‌های اصلی بالا -->
+    <div class="m-actions" style="margin-bottom:16px">
+      <button class="auth-btn" onclick="saveProfile()">💾 ذخیره</button>
+      <button class="m-cancel" onclick="doLogout()">🚪 خروج</button>
+    </div>
+
     <input id="profileBio" class="auth-input" placeholder="بیو (درباره خودت)">
     <select id="profileStatus" class="auth-input">
       <option value="آنلاین">🟢 آنلاین</option>
@@ -146,10 +154,7 @@
     <div class="section-label">✨ افکت پس‌زمینه</div>
     <div id="bgEffectSelector" class="bg-effect-grid"></div>
 
-    <div class="m-actions">
-      <button class="auth-btn" onclick="saveProfile()">💾 ذخیره</button>
-      <button class="m-cancel" onclick="doLogout()">🚪 خروج</button>
-    </div>
+
     <button class="m-close" onclick="closeModal('profileModal')">✕</button>
   </div>
 </div>
