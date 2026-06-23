@@ -509,22 +509,41 @@ function renderMemberList(){
   const list=$('memberItems');
   const members=serverMembers[currentServerId]||[];
   const canMod=['owner','admin'].includes(myServerRole);
-  list.innerHTML=members.map(u=>{
-    const online=!!onlineUsers[u.id];
+
+  const online=members.filter(u=>!!onlineUsers[u.id]);
+  const offline=members.filter(u=>!onlineUsers[u.id]);
+
+  function memberCard(u){
+    const isOnline=!!onlineUsers[u.id];
     const ri=u.serverRole==='owner'?'👑':u.serverRole==='admin'?'🛡':u.serverRole==='mod'?'🔨':'';
     const customRoles=(serverRoles[currentServerId]||[]).filter(r=>u.roles?.includes(r.id));
     const roleTag=customRoles.map(r=>`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${r.color}22;color:${r.color};border:1px solid ${r.color}44">${r.name}</span>`).join('');
     const av=u.avatarUrl?`<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span>${u.avatar}</span>`;
-    return `<div class="ml-user" onclick="${canMod&&u.id!==me?.id?`openUserMenu('${u.id}','${u.username}','${u.serverRole||'member'}','${u.color}')`:''}"
-      style="${canMod&&u.id!==me?.id?'cursor:pointer':''}">
-      <div class="ml-avatar ${online?'online':''}" style="background:${u.color}">${av}</div>
-      <div style="min-width:0">
+    const clickable=canMod&&u.id!==me?.id;
+    return `<div class="ml-user" onclick="${clickable?`openUserMenu('${u.id}','${u.username}','${u.serverRole||'member'}','${u.color}')`:''}"
+      style="${clickable?'cursor:pointer':''}; opacity:${isOnline?1:0.45}">
+      <div class="ml-avatar ${isOnline?'online':''}" style="background:${u.color}">${av}</div>
+      <div style="min-width:0;flex:1">
         <div class="ml-uname">${u.username} ${ri}</div>
-        <div style="font-size:10px;color:var(--muted)">${online?'🟢':'⚫'}</div>
+        <div style="font-size:10px;color:var(--muted)">${u.status||'آنلاین'}</div>
         ${roleTag?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${roleTag}</div>`:''}
       </div>
     </div>`;
-  }).join('')||'<div style="color:var(--muted);padding:8px;font-size:13px">اعضایی نیست</div>';
+  }
+
+  let html='';
+
+  if(online.length){
+    html+=`<div class="ml-section-title">🟢 آنلاین — ${online.length}</div>`;
+    html+=online.map(memberCard).join('');
+  }
+
+  if(offline.length){
+    html+=`<div class="ml-section-title" style="margin-top:12px">⚫ آفلاین — ${offline.length}</div>`;
+    html+=offline.map(memberCard).join('');
+  }
+
+  list.innerHTML=html||'<div style="color:var(--muted);padding:8px;font-size:13px">اعضایی نیست</div>';
 }
 
 // ─── USER MENU ───────────────────────────────────────────────────────────────
