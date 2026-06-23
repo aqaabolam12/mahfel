@@ -576,6 +576,26 @@ io.on('connection', socket => {
     if (cmd === 'skip') io.to(`channel:${channelId}`).emit('bot_skip');
   });
 
+
+// ─── AUDIO RELAY (fallback when WebRTC fails) ────────────────────────────────
+const audioRooms = {}; // { channelId: { socketId: buffer } }
+
+socket.on('audio_chunk', ({ channelId, chunk }) => {
+  // Relay audio chunk to all others in voice channel
+  socket.to(`voice:${channelId}`).emit('audio_chunk', {
+    from: socket.id,
+    userId: socket.userId,
+    chunk
+  });
+});
+
+socket.on('rtc_state', ({ to, state }) => {
+  // Tell server about connection state for fallback
+  if (state === 'failed' || state === 'disconnected') {
+    io.to(to).emit('use_relay', { from: socket.id });
+  }
+});
+
   // Disconnect
   socket.on('disconnect', () => {
     delete onlineSockets[socket.userId];
