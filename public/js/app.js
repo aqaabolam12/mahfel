@@ -47,11 +47,12 @@ window.onload=()=>{
   // autofill last username
   const lastUser=localStorage.getItem('lastUser');
   if(lastUser&&$('authUser'))$('authUser').value=lastUser;
-  // icon quick pick
-  document.getElementById('iconQuickPick')?.addEventListener('click',e=>{
-    const txt=e.target.textContent.trim();
-    if(txt)document.getElementById('newServerIcon').value=txt;
-  });
+  // icon quick pick - make each emoji clickable
+  const qp=document.getElementById('iconQuickPick');
+  if(qp){
+    const emojis=qp.textContent.trim().split(/\s+/).filter(Boolean);
+    qp.innerHTML=emojis.map(e=>`<span onclick="selectServerEmoji('${e}')">${e}</span>`).join('');
+  }
   const t=localStorage.getItem('mt'), u=localStorage.getItem('mu');
   if(t&&u){token=t;me=JSON.parse(u);startApp();}
 };
@@ -332,10 +333,29 @@ function newPC(sid,uid){
   pc.ontrack=e=>{
     if(peerAudios[sid]){peerAudios[sid].pause();peerAudios[sid].remove();}
     const audio=document.createElement('audio');
-    audio.autoplay=true;audio.srcObject=e.streams[0];
-    const u=socketUserMap[sid];if(u){audio.dataset.userId=u;audio.volume=localMutes[u]?0:(localVolumes[u]??1);}
-    document.body.appendChild(audio);peerAudios[sid]=audio;
-    audio.play().catch(()=>{});
+    audio.autoplay=true;
+    audio.srcObject=e.streams[0];
+    audio.volume=1;
+    const u=socketUserMap[sid];
+    if(u){
+      audio.dataset.userId=u;
+      audio.volume=localMutes[u]?0:(localVolumes[u]??1);
+    }
+    // Set speaker device if selected
+    const spk=localStorage.getItem('mahfel_speaker');
+    if(spk&&audio.setSinkId){
+      audio.setSinkId(spk).catch(()=>{});
+    }
+    document.body.appendChild(audio);
+    peerAudios[sid]=audio;
+    // Force play
+    const playPromise=audio.play();
+    if(playPromise){
+      playPromise.catch(e=>{
+        // Retry on user interaction
+        document.addEventListener('click',()=>audio.play().catch(()=>{}),{once:true});
+      });
+    }
   };
   return pc;
 }
@@ -721,11 +741,49 @@ async function saveServerProfile(){
 }
 
 // ─── SERVER MANAGEMENT ───────────────────────────────────────────────────────
+let newServerIconUrl = '';
+let newServerIconEmoji = '🌟';
+
+function selectServerEmoji(emoji){
+  newServerIconEmoji = emoji;
+  newServerIconUrl = '';
+  const preview = $('newSrvIconPreview');
+  if(preview) preview.innerHTML = `<span id="newSrvIconEmoji" style="font-size:32px">${emoji}</span>`;
+  document.querySelectorAll('.icon-quick-grid span').forEach(s=>{
+    s.classList.toggle('selected', s.textContent===emoji);
+  });
+}
+
+function previewNewServerIcon(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    newServerIconUrl=ev.target.result;
+    newServerIconEmoji='';
+    const preview=$('newSrvIconPreview');
+    if(preview)preview.innerHTML=`<img src="${newServerIconUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
 async function createServer(){
-  const name=$('newServerName').value.trim(),icon=$('newServerIcon').value.trim()||'🌟';
+  const name=$('newServerName').value.trim();
   if(!name){showToast('اسم الزامیه');return;}
-  const d=await api('/api/servers','POST',{name,icon});
-  if(d.ok){myServers.push(d.server);renderServerBar();closeModal('createServerModal');selectServer(d.server.id);showToast('سرور ساخته شد 🎉');}
+  const icon=newServerIconEmoji||'🌟';
+  const iconUrl=newServerIconUrl||null;
+  const d=await api('/api/servers','POST',{name,icon,iconUrl});
+  if(d.ok){
+    myServers.push(d.server);
+    renderServerBar();
+    closeModal('createServerModal');
+    selectServer(d.server.id);
+    showToast('سرور ساخته شد 🎉');
+    // reset
+    newServerIconUrl='';newServerIconEmoji='🌟';
+    const preview=$('newSrvIconPreview');
+    if(preview)preview.innerHTML=`<span style="font-size:32px">🌟</span>`;
+    $('newServerName').value='';
+  }
 }
 async function joinServer(){
   const id=$('joinServerId').value.trim();if(!id)return;

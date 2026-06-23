@@ -124,12 +124,13 @@ app.get('/api/servers', authMiddleware, (req, res) => {
 });
 
 app.post('/api/servers', authMiddleware, (req, res) => {
-  const { name, icon } = req.body;
+  const { name, icon, iconUrl } = req.body;
   if (!name?.trim()) return res.json({ ok: false, msg: 'اسم سرور الزامیه' });
   const id = uuidv4();
   const genId = uuidv4();
   db.servers[id] = {
-    id, name: name.trim(), icon: icon || '🌟', ownerId: req.userId,
+    id, name: name.trim(), icon: icon || '🌟', iconUrl: iconUrl || null,
+    ownerId: req.userId,
     channels: [{ id: genId, name: 'عمومی', type: 'text', serverId: id }],
     members: [{ id: req.userId, role: 'owner' }],
   };

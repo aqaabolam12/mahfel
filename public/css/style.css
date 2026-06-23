@@ -479,3 +479,44 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
 .vc-vol-row {
   display:flex; align-items:center; gap:5px; width:100%;
 }
+
+/* ─── NEW SERVER ICON ────────────────────────────────────── */
+.new-srv-icon {
+  width:80px; height:80px; border-radius:20px; margin:0 auto;
+  background:var(--bg-hover); border:2px dashed var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:.2s; overflow:hidden;
+}
+.new-srv-icon:hover { border-color:var(--accent); background:rgba(124,106,247,.1); }
+.new-srv-icon img { width:100%; height:100%; object-fit:cover; }
+.icon-quick-grid {
+  display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; font-size:24px;
+}
+.icon-quick-grid span {
+  cursor:pointer; padding:6px; border-radius:8px; transition:.15s;
+  border:2px solid transparent;
+}
+.icon-quick-grid span:hover { background:var(--bg-hover); }
+.icon-quick-grid span.selected { border-color:var(--accent); background:rgba(124,106,247,.15); }
+
+/* ─── CREATE SERVER MODAL ────────────────────────────────── */
+.new-srv-icon {
+  width:80px; height:80px; border-radius:20px; margin:0 auto;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; border:2px solid var(--border); overflow:hidden;
+  transition:.2s;
+}
+.new-srv-icon:hover { border-color:var(--accent); box-shadow:0 0 16px var(--accent-glow); }
+.new-srv-icon img { width:100%; height:100%; object-fit:cover; }
+.icon-grid {
+  display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;
+  font-size:24px; background:var(--bg-input);
+  border-radius:10px; padding:12px; border:1px solid var(--border);
+}
+.icon-grid span {
+  cursor:pointer; padding:4px; border-radius:6px; transition:.1s;
+  display:flex; align-items:center; justify-content:center;
+}
+.icon-grid span:hover { background:var(--bg-hover); transform:scale(1.2); }
+.icon-grid span.selected { background:rgba(124,106,247,.3); border:1px solid var(--accent); }
