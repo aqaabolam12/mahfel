@@ -14,7 +14,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── FILE-BASED STORAGE ──────────────────────────────────────────────────────
-const DB_FILE = path.join(__dirname, 'db.json');
+// Railway persistent volume at /data, fallback to local
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+console.log('DB path:', DB_FILE);
 
 function loadDB() {
   try {

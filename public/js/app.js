@@ -518,31 +518,41 @@ function toggleMic(){
 }
 function renderVoiceParticipants(users){
   const area=document.getElementById('vcParticipants');
-  if(!users.length){area.innerHTML='<div style="color:var(--text-muted);font-size:14px">هنوز کسی نیست...</div>';return;}
+  if(!users.length){
+    area.innerHTML='<div style="color:var(--text-muted);font-size:14px;text-align:center">هنوز کسی نیست...<br><br>🎤 منتظر دوستاتی</div>';
+    return;
+  }
   area.innerHTML=users.map(u=>{
     const isMe=u.id===me?.id;
-    const isMutedLocally=localMutes[u.id];
+    const isMutedLocally=!!localMutes[u.id];
     const vol=localVolumes[u.id]??1;
-    return `<div class="vc-user" id="vcu-${u.id}">
-      <div class="vc-avatar ${u.speaking&&!isMutedLocally?'speaking':''}" data-uid="${u.id}" 
-           style="background:linear-gradient(135deg,${u.color},${u.color}cc);
-                  ${isMutedLocally?'filter:grayscale(1);opacity:0.5':''}">
+    const volPct=Math.round(vol*100);
+    return `<div class="vc-user-card">
+      <div class="vc-avatar ${u.speaking&&!isMutedLocally?'speaking':''}" 
+           data-uid="${u.id}" 
+           style="background:linear-gradient(135deg,${u.color},${u.color}aa);
+           ${isMutedLocally?'filter:grayscale(0.8);opacity:0.5':''}">
         ${u.muted?'🔇':u.avatar}
       </div>
       <div class="vc-uname">${u.username}${u.muted?' 🔇':''}</div>
       ${!isMe?`
-      <div class="vc-vol-ctrl">
-        <button class="vc-local-mute ${isMutedLocally?'active':''}" onclick="toggleLocalMute('${u.id}')" title="میوت برای خودت">
-          ${isMutedLocally?'🔇':'🔊'}
-        </button>
-        <input type="range" class="vc-vol-slider" min="0" max="100" value="${Math.round(vol*100)}"
-          oninput="setLocalVolume('${u.id}',this.value/100)"
-          title="تنظیم صدا">
-      </div>`:
-      '<div class="vc-uname" style="font-size:11px;color:var(--accent)">شما</div>'}
+        <div class="vc-controls-row">
+          <button class="vc-mute-btn ${isMutedLocally?'muted':''}" 
+                  onclick="toggleLocalMute('${u.id}')" 
+                  title="${isMutedLocally?'آنمیوت':'میوت برای خودت'}">
+            ${isMutedLocally?'🔇':'🔊'}
+          </button>
+          <input type="range" class="vc-vol-range" 
+                 min="0" max="100" value="${volPct}"
+                 oninput="setLocalVolume('${u.id}',this.value/100)"
+                 title="صدا: ${volPct}%">
+          <span class="vc-vol-label">${volPct}%</span>
+        </div>`
+      :'<div style="font-size:10px;color:var(--accent);margin-top:4px">شما</div>'}
     </div>`;
   }).join('');
 }
+
 function updateVoiceUsersSidebar(channelId,users){
   const el=document.getElementById(`vul-${channelId}`);if(!el)return;
   el.innerHTML=users.map(u=>`<div class="vu-item"><div class="vu-avatar" style="background:${u.color}">${u.muted?'🔇':u.avatar}</div>${u.username}</div>`).join('');
