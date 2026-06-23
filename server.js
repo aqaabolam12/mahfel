@@ -324,33 +324,35 @@ io.on('connection', socket => {
   });
 
 
-  // Bot Music
-  socket.on('bot_search', async ({ query, channelId, username }) => {
-    try {
-      const https = require('https');
-      const encoded = encodeURIComponent(query);
-      const apiUrl = `https://itunes.apple.com/search?term=${encoded}&media=music&limit=5`;
-      const result = await new Promise((resolve, reject) => {
-        https.get(apiUrl, (res) => {
-          let data = '';
-          res.on('data', c => data += c);
-          res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); }});
-        }).on('error', reject);
+  // Bot Music - iTunes API (no external deps needed)
+  socket.on('bot_search', ({ query, channelId, username }) => {
+    const https = require('https');
+    const encoded = encodeURIComponent(query);
+    const apiUrl = `https://itunes.apple.com/search?term=${encoded}&media=music&limit=5`;
+    https.get(apiUrl, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (!result.results || !result.results.length) {
+            io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ نتیجه‌ای برای «${query}» پیدا نشد` });
+            return;
+          }
+          const track = result.results[0];
+          const title = `${track.trackName} — ${track.artistName}`;
+          if (!track.previewUrl) {
+            io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ پیش‌نمایش موجود نیست` });
+            return;
+          }
+          io.to(`channel:${channelId}`).emit('bot_play', { title, url: track.previewUrl, requestedBy: username });
+        } catch(e) {
+          io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در جستجو' });
+        }
       });
-      if (!result.results || !result.results.length) {
-        io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ نتیجه‌ای برای «${query}» پیدا نشد` });
-        return;
-      }
-      const track = result.results[0];
-      const title = `${track.trackName} — ${track.artistName}`;
-      if (!track.previewUrl) {
-        io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ پیش‌نمایش موجود نیست` });
-        return;
-      }
-      io.to(`channel:${channelId}`).emit('bot_play', { title, url: track.previewUrl, requestedBy: username });
-    } catch(e) {
-      io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در جستجو' });
-    }
+    }).on('error', () => {
+      io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در اتصال' });
+    });
   });
 
   socket.on('bot_command', ({ cmd, channelId }) => {

@@ -1,7 +1,7 @@
 {
   "name": "mahfel",
   "version": "1.0.0",
-  "description": "محفل - چت و ویس با دوستات",
+  "description": "محفل",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,10 +9,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
-    "node-fetch": "^2.7.0",
     "socket.io": "^4.8.3",
-    "uuid": "^14.0.1",
-    "youtube-search-api": "^2.0.1",
-    "ytsr": "^3.8.4"
+    "uuid": "^14.0.1"
   }
 }
