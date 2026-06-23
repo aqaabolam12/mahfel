@@ -360,11 +360,16 @@ function newPC(sid,uid){
       {urls:'stun:stun1.l.google.com:19302'},
       {urls:'stun:stun2.l.google.com:19302'},
       {urls:'stun:stun3.l.google.com:19302'},
-      {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-      {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-      {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+      {urls:'stun:stun4.l.google.com:19302'},
+      // Metered TURN - رایگان و سریع
+      {urls:'turn:a.relay.metered.ca:80',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
+      {urls:'turn:a.relay.metered.ca:80?transport=tcp',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
+      {urls:'turn:a.relay.metered.ca:443',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
+      {urls:'turn:a.relay.metered.ca:443?transport=tcp',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
     ],
     iceCandidatePoolSize:10,
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require',
   });
   peerConnections[sid]=pc;
   if(uid)socketUserMap[sid]=uid;
