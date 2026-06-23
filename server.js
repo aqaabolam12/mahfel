@@ -324,6 +324,51 @@ app.get('/api/version', (req, res) => {
   res.json({ version: '1.0.0', name: 'محفل' });
 });
 
+
+// ─── DELETE SERVER ────────────────────────────────────────────────────────────
+app.delete('/api/servers/:id', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false, msg: 'سرور نیست' });
+  if (s.id === 'default') return res.json({ ok: false, msg: 'سرور اصلی رو نمیشه حذف کرد' });
+  if (s.ownerId !== req.userId) return res.json({ ok: false, msg: 'فقط owner میتونه سرور رو حذف کنه' });
+  // Delete server channels messages
+  s.channels.forEach(ch => delete db.messages[ch.id]);
+  delete db.servers[s.id];
+  saveDB();
+  io.to(`server:${s.id}`).emit('server_deleted', { serverId: s.id });
+  res.json({ ok: true });
+});
+
+// ─── DISCONNECT USER FROM VOICE ───────────────────────────────────────────────
+app.post('/api/servers/:id/members/:uid/disconnect-voice', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!canModerate(req.params.id, req.userId))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const targetSocket = onlineSockets[req.params.uid];
+  if (targetSocket) {
+    io.to(targetSocket).emit('force_disconnect_voice', {});
+    res.json({ ok: true });
+  } else {
+    res.json({ ok: false, msg: 'کاربر توی ویس نیست' });
+  }
+});
+
+// ─── UPDATE SERVER ICON ───────────────────────────────────────────────────────
+app.patch('/api/servers/:id', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const { name, icon, iconUrl } = req.body;
+  if (name) s.name = name;
+  if (icon) s.icon = icon;
+  if (iconUrl !== undefined) s.iconUrl = iconUrl;
+  saveDB();
+  io.to(`server:${s.id}`).emit('server_updated', { serverId: s.id, name: s.name, icon: s.icon, iconUrl: s.iconUrl });
+  res.json({ ok: true, server: s });
+});
+
 // ─── SOCKET.IO ────────────────────────────────────────────────────────────────
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;

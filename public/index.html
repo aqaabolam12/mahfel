@@ -96,6 +96,7 @@
         <div class="vc-bar">
           <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
           <button class="vc-btn" id="deafenBtn" onclick="toggleDeafen()">🔊</button>
+          <button class="vc-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎛</button>
           <button class="vc-btn danger" onclick="leaveVoice()">📵 خروج</button>
         </div>
       </div>
@@ -172,6 +173,7 @@
       <button class="stab active" data-tab="roles" onclick="switchStab(this,'roles')">🎭 رول‌ها</button>
       <button class="stab" data-tab="profile" onclick="switchStab(this,'profile')">🖼 پروفایل سرور</button>
       <button class="stab" data-tab="invite" onclick="switchStab(this,'invite')">🔗 دعوت</button>
+      <button class="stab" data-tab="manage" onclick="switchStab(this,'manage')">⚙ مدیریت</button>
     </div>
 
     <!-- Roles Tab -->
@@ -278,6 +280,7 @@
       <button class="danger-btn" onclick="banUser()">🔨 بن</button>
     </div>
     <button class="auth-btn sm" onclick="openMoveUser()" style="width:100%;margin-top:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim)">📡 انتقال به ویس</button>
+    <button class="auth-btn sm" onclick="disconnectFromVoice()" style="width:100%;margin-top:8px;background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red)">🔌 دیسکانکت از ویس</button>
     <button class="m-close" onclick="closeModal('userMenuModal')">✕</button>
   </div>
 </div>
@@ -366,6 +369,29 @@
       <button class="m-cancel" onclick="closeModal('audioSettingsModal')">لغو</button>
     </div>
     <button class="m-close" onclick="closeModal('audioSettingsModal')">✕</button>
+  </div>
+</div>
+
+
+<!-- Soundboard Modal -->
+<div class="modal-overlay hidden" id="soundboardModal">
+  <div class="modal wide">
+    <div class="m-title">🎛 ساندبورد</div>
+    
+    <div class="sb-upload-row">
+      <input id="sbFileInput" type="file" accept="audio/*" multiple style="display:none" onchange="addSoundFiles(event)">
+      <button class="auth-btn sm" onclick="document.getElementById('sbFileInput').click()">📁 آپلود صدا</button>
+      <input id="sbNameInput" class="auth-input" placeholder="اسم صدا" style="margin:0;flex:1">
+      <input id="sbUrlInput" class="auth-input" placeholder="یا لینک MP3" style="margin:0;flex:1">
+      <button class="auth-btn sm" onclick="addSoundUrl()">＋</button>
+    </div>
+
+    <div id="soundboardGrid" class="sb-grid"></div>
+
+    <div class="sb-info">💡 فایل‌های صوتی حداکثر ۶ ثانیه در ویس پخش میشن</div>
+    
+    <button class="m-cancel" onclick="closeModal('soundboardModal')" style="width:100%;margin-top:8px">بستن</button>
+    <button class="m-close" onclick="closeModal('soundboardModal')">✕</button>
   </div>
 </div>
 

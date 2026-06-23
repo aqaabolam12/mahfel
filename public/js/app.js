@@ -311,6 +311,16 @@ function connectSocket(){
   });
   socket.on('rtc_answer',async({from,answer})=>{try{await peerConnections[from]?.setRemoteDescription(answer);}catch(e){}});
   socket.on('rtc_candidate',async({from,candidate})=>{try{await peerConnections[from]?.addIceCandidate(candidate);}catch(e){}});
+  socket.on('force_disconnect_voice',()=>{if(currentVoiceId){leaveVoice();showToast('⚡ ادمین تو رو از ویس دیسکانکت کرد');}});
+  socket.on('server_updated',({serverId,name,icon,iconUrl})=>{
+    const srv=myServers.find(s=>s.id===serverId);
+    if(srv){srv.name=name;srv.icon=icon;srv.iconUrl=iconUrl;renderServerBar();}
+    if(serverId===currentServerId)setText('sidebarServerName',name);
+  });
+  socket.on('server_deleted',({serverId})=>{
+    myServers=myServers.filter(s=>s.id!==serverId);renderServerBar();
+    if(currentServerId===serverId)selectServer('default');
+  });
 }
 
 // ─── WEBRTC ───────────────────────────────────────────────────────────────────
@@ -461,7 +471,12 @@ function renderServerBar(){
     const el=document.createElement('div');
     el.className='server-icon'+(s.id===currentServerId?' active':'');
     el.id=`si-${s.id}`;el.title=s.name;
-    el.innerHTML=`<span style="font-size:18px">${s.icon}</span>`;
+    if(s.iconUrl){
+      el.style.padding='0';el.style.overflow='hidden';
+      el.innerHTML=`<img src="${s.iconUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    }else{
+      el.innerHTML=`<span style="font-size:18px">${s.icon||'🌟'}</span>`;
+    }
     el.onclick=()=>selectServer(s.id);c.appendChild(el);
   });
 }
@@ -632,6 +647,17 @@ function switchStab(btn,tabId){
   btn.classList.add('active');
   document.querySelectorAll('.stab-content').forEach(c=>c.classList.add('hidden'));
   document.getElementById(`stab-${tabId}`)?.classList.remove('hidden');
+  if(tabId==='manage'){
+    const srv=myServers.find(s=>s.id===currentServerId);
+    if(srv){
+      const preview=$('srvIconPreview');
+      if(preview){
+        if(srv.iconUrl)preview.innerHTML=`<img src="${srv.iconUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+        else preview.innerHTML=`<span style="font-size:24px">${srv.icon||'🌟'}</span>`;
+      }
+      setVal('editServerName',srv.name||'');
+    }
+  }
 }
 async function loadServerRoles(sid){
   try{const d=await api(`/api/servers/${sid}/roles`);if(d.ok){serverRoles[sid]=d.roles;renderRolesList(sid);}}catch(e){}
@@ -1202,5 +1228,69 @@ function deleteSound(e, idx) {
   saveSounds();
   renderSoundboard();
 }
+
+
+
+// ─── SERVER MANAGEMENT ───────────────────────────────────────────────────────
+async function deleteServer(){
+  const srv=myServers.find(s=>s.id===currentServerId);
+  if(!srv)return;
+  if(!confirm(`سرور "${srv.name}" حذف بشه؟ این کار برگشت‌ناپذیره!`))return;
+  const d=await api(`/api/servers/${currentServerId}`,'DELETE');
+  if(d.ok){
+    closeModal('serverSettingsModal');
+    showToast('سرور حذف شد');
+    myServers=myServers.filter(s=>s.id!==currentServerId);
+    renderServerBar();
+    selectServer('default');
+  }else showToast(d.msg||'خطا');
+}
+
+async function uploadServerIcon(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const iconUrl=ev.target.result;
+    const preview=$('srvIconPreview');
+    if(preview)preview.innerHTML=`<img src="${iconUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+    const d=await api(`/api/servers/${currentServerId}`,'PATCH',{iconUrl});
+    if(d.ok){
+      const srv=myServers.find(s=>s.id===currentServerId);
+      if(srv)srv.iconUrl=iconUrl;
+      renderServerBar();
+      showToast('آیکون سرور آپدیت شد ✅');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveServerInfo(){
+  const name=$('editServerName').value.trim();
+  if(!name)return;
+  const d=await api(`/api/servers/${currentServerId}`,'PATCH',{name});
+  if(d.ok){
+    const srv=myServers.find(s=>s.id===currentServerId);
+    if(srv){srv.name=name;setText('sidebarServerName',name);}
+    renderServerBar();
+    closeModal('serverSettingsModal');
+    showToast('سرور آپدیت شد ✅');
+  }
+}
+
+// ─── DISCONNECT FROM VOICE ───────────────────────────────────────────────────
+async function disconnectFromVoice(){
+  const uid=$('ctxUserId').value;
+  const name=$('ctxUsername').textContent;
+  if(!confirm(`${name} رو از ویس دیسکانکت کنی؟`))return;
+  const d=await api(`/api/servers/${currentServerId}/members/${uid}/disconnect-voice`,'POST');
+  if(d.ok){closeModal('userMenuModal');showToast(`${name} از ویس دیسکانکت شد`);}
+  else showToast(d.msg||'خطا');
+}
+
+
+
+// renderServerBar updated inline below
+
+
 
 
