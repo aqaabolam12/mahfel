@@ -621,9 +621,9 @@ socket.on('rtc_state', ({ to, state }) => {
   }
 });
 
-  // Ping check
-  socket.on('ping_check', (data, cb) => {
-    if (cb) cb();
+  // Ping check - respond immediately
+  socket.on('ping_check', (sentAt) => {
+    socket.emit('pong_check', sentAt);
   });
 
   // Disconnect

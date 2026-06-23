@@ -1700,17 +1700,20 @@ function startPingMonitor() {
   setInterval(() => {
     if (!socket?.connected) return;
     const start = Date.now();
-    socket.emit('ping_check', {}, () => {
-      const ping = Date.now() - start;
-      const el = $('pingValue');
-      const wrap = $('pingDisplay');
-      if (!el || !wrap) return;
-      el.textContent = ping;
-      wrap.classList.remove('lag','bad');
-      if (ping > 150) wrap.classList.add('bad');
-      else if (ping > 80) wrap.classList.add('lag');
-    });
-  }, 3000);
+    // Use socket.io built-in ping measurement
+    socket.volatile.emit('ping_check', start);
+  }, 2000);
+  
+  socket.on('pong_check', (sentAt) => {
+    const ping = Date.now() - sentAt;
+    const el = $('pingValue');
+    const wrap = $('pingDisplay');
+    if (!el || !wrap) return;
+    el.textContent = ping;
+    wrap.classList.remove('lag','bad');
+    if (ping > 200) wrap.classList.add('bad');
+    else if (ping > 100) wrap.classList.add('lag');
+  });
 }
 
 // Ping starts in startApp
