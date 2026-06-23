@@ -336,12 +336,7 @@ async function joinVoice(channelId){
   const savedMic=localStorage.getItem('mahfel_mic')||'';
   if(savedMic) selectedMicId=savedMic;
   
-  const audioConstraints={
-    echoCancellation:true,
-    noiseSuppression:true,
-    autoGainControl:true,
-  };
-  if(selectedMicId) audioConstraints.deviceId={ideal:selectedMicId};
+  const audioConstraints = getAudioConstraints();
   
   try{
     localStream=await navigator.mediaDevices.getUserMedia({audio:audioConstraints});
@@ -900,6 +895,36 @@ let selectedMicId = localStorage.getItem('mahfel_mic') || '';
 let selectedSpeakerId = localStorage.getItem('mahfel_speaker') || '';
 let micTestStream = null, micTestInterval = null;
 
+function saveAudioToggles(){
+  localStorage.setItem('mahfel_nc', $('noiseCancelToggle')?.checked?'1':'0');
+  localStorage.setItem('mahfel_ag', $('autoGainToggle')?.checked?'1':'0');
+  localStorage.setItem('mahfel_ec', $('echoCancelToggle')?.checked?'1':'0');
+  showToast('تنظیمات صدا ذخیره شد ✅');
+  // اگه توی ویس هستیم اعمال کن
+  if(localStream && currentVoiceId) restartVoiceWithNewDevice();
+}
+
+function loadAudioToggles(){
+  const nc=$('noiseCancelToggle'), ag=$('autoGainToggle'), ec=$('echoCancelToggle');
+  if(nc) nc.checked = localStorage.getItem('mahfel_nc')!=='0';
+  if(ag) ag.checked = localStorage.getItem('mahfel_ag')!=='0';
+  if(ec) ec.checked = localStorage.getItem('mahfel_ec')!=='0';
+}
+
+function getAudioConstraints(){
+  const nc = localStorage.getItem('mahfel_nc')!=='0';
+  const ag = localStorage.getItem('mahfel_ag')!=='0';
+  const ec = localStorage.getItem('mahfel_ec')!=='0';
+  const mic = localStorage.getItem('mahfel_mic')||'';
+  const c = {
+    noiseSuppression: nc,
+    autoGainControl: ag,
+    echoCancellation: ec,
+  };
+  if(mic) c.deviceId = {ideal: mic};
+  return c;
+}
+
 async function loadAudioDevices() {
   try {
     // درخواست permission اول
@@ -929,8 +954,10 @@ async function loadAudioDevices() {
           </option>`
         ).join('');
     }
+    loadAudioToggles();
   } catch(e) {
     showToast('دسترسی به دستگاه‌های صوتی نبود');
+    loadAudioToggles();
   }
 }
 
@@ -955,14 +982,7 @@ function saveAudioSettings() {
 
 async function restartVoiceWithNewDevice() {
   try {
-    const constraints = {
-      audio: {
-        deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
-        echoCancellation: true,
-        noiseSuppression: true,
-      }
-    };
-    const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const newStream = await navigator.mediaDevices.getUserMedia({audio: getAudioConstraints()});
     // جایگزین track قدیمی
     const newTrack = newStream.getAudioTracks()[0];
     Object.values(peerConnections).forEach(pc => {

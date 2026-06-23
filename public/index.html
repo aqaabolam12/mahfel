@@ -330,6 +330,34 @@
       <span id="micTestLabel" style="font-size:12px;color:var(--muted)">میکروفون رو تست کن</span>
     </div>
 
+    <div class="section-label">🎛 پردازش صدا</div>
+    <div class="audio-toggle-list">
+      <label class="audio-toggle">
+        <div class="at-info">
+          <div class="at-title">🔇 نویز کنسلینگ</div>
+          <div class="at-sub">حذف صداهای محیطی (فن، کیبورد و...)</div>
+        </div>
+        <input type="checkbox" id="noiseCancelToggle" checked onchange="saveAudioToggles()">
+        <div class="at-switch"></div>
+      </label>
+      <label class="audio-toggle">
+        <div class="at-info">
+          <div class="at-title">🎚 تنظیم خودکار صدا</div>
+          <div class="at-sub">جلوگیری از خیلی بلند یا خیلی آرام شدن صدا</div>
+        </div>
+        <input type="checkbox" id="autoGainToggle" checked onchange="saveAudioToggles()">
+        <div class="at-switch"></div>
+      </label>
+      <label class="audio-toggle">
+        <div class="at-info">
+          <div class="at-title">🔁 حذف اکو</div>
+          <div class="at-sub">جلوگیری از اکو و بازتاب صدا</div>
+        </div>
+        <input type="checkbox" id="echoCancelToggle" checked onchange="saveAudioToggles()">
+        <div class="at-switch"></div>
+      </label>
+    </div>
+
     <div class="section-label">🔈 تست بلندگو</div>
     <button class="auth-btn sm" onclick="testSpeaker()" style="width:100%;margin-bottom:12px">▶ پخش صدای تست</button>
 

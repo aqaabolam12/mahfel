@@ -379,3 +379,48 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
   font-size: 20px; transition: .15s; flex-shrink: 0;
 }
 .ch-toggle-btn:hover { color: var(--accent); }
+
+/* ─── AUDIO SETTINGS ─────────────────────────────────────── */
+.mic-test-wrap {
+  display:flex; align-items:center; gap:10px; margin-bottom:16px;
+  background:var(--bg-input); border:1px solid var(--border);
+  border-radius:10px; padding:12px;
+}
+.mic-meter-wrap {
+  flex:1; height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;
+}
+.mic-meter {
+  height:100%; width:0%; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent),#00ff88);
+  transition:width .05s;
+}
+
+/* ─── AUDIO TOGGLES ──────────────────────────────────────── */
+.audio-toggle-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.audio-toggle {
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  background:var(--bg-input); border:1px solid var(--border);
+  border-radius:10px; cursor:pointer; transition:.15s;
+}
+.audio-toggle:hover { border-color:var(--accent); }
+.at-info { flex:1; }
+.at-title { font-size:14px; font-weight:600; margin-bottom:2px; }
+.at-sub { font-size:12px; color:var(--muted); }
+.audio-toggle input[type="checkbox"] { display:none; }
+.at-switch {
+  width:44px; height:24px; border-radius:12px; background:var(--bg-hover);
+  position:relative; flex-shrink:0; transition:.2s;
+  border:1px solid var(--border);
+}
+.at-switch::after {
+  content:''; position:absolute; top:3px; right:3px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--muted); transition:.2s;
+}
+.audio-toggle input:checked ~ .at-switch {
+  background:var(--accent); border-color:var(--accent);
+  box-shadow:0 0 8px var(--accent-glow);
+}
+.audio-toggle input:checked ~ .at-switch::after {
+  right:calc(100% - 19px); background:#fff;
+}
