@@ -60,7 +60,13 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 .auth-error { color:var(--red); font-size:13px; margin-bottom:10px; min-height:18px; text-align:center; }
 
 /* ─── APP LAYOUT ────────────────────────────────────────── */
-.app { display:flex; height:100vh; flex-direction:row; }
+.app { 
+  display:grid; 
+  height:100vh; 
+  grid-template-columns:68px 232px 1fr; 
+  grid-template-rows:1fr;
+  direction:ltr;
+}
 
 /* SERVER BAR */
 .server-bar {
