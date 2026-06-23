@@ -408,7 +408,7 @@ function startAudioRelay() {
     audioCtxRelay = new AudioContext({ latencyHint: 'interactive' }); // use default sample rate
     const src = audioCtxRelay.createMediaStreamSource(localStream);
     // 256 samples = ~16ms at 16000Hz (much less delay than 1024)
-    const processor = audioCtxRelay.createScriptProcessor(256, 1, 1);
+    const processor = audioCtxRelay.createScriptProcessor(1024, 1, 1);
     src.connect(processor);
     processor.connect(audioCtxRelay.destination);
     
@@ -425,7 +425,7 @@ function startAudioRelay() {
       for (let i = 0; i < input.length; i++) {
         int16[i] = Math.max(-32768, Math.min(32767, input[i] * 32767));
       }
-      socket.volatile.emit('audio_chunk', {
+      socket.emit('audio_chunk', {
         channelId: currentVoiceId,
         chunk: Array.from(int16),
         sampleRate: audioCtxRelay.sampleRate
@@ -1699,7 +1699,7 @@ function startPingMonitor() {
   setInterval(() => {
     if (!socket?.connected) return;
     const start = Date.now();
-    socket.volatile.emit('ping_check', {}, () => {
+    socket.emit('ping_check', {}, () => {
       const ping = Date.now() - start;
       const el = $('pingValue');
       const wrap = $('pingDisplay');
