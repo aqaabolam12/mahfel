@@ -572,3 +572,18 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
   background:var(--bg-input); border:1px solid var(--border);
   border-radius:10px; margin-bottom:6px;
 }
+
+/* ─── PING DISPLAY ───────────────────────────────────────── */
+.ping-display {
+  display:flex; align-items:center; gap:2px;
+  padding:3px 7px; border-radius:6px;
+  background:var(--bg-hover); cursor:default;
+  border:1px solid var(--border);
+}
+.ping-display #pingValue {
+  font-size:12px; font-weight:700; font-family:monospace;
+  color:#00ff88; min-width:24px; text-align:right;
+}
+.ping-display.lag #pingValue { color:#f59e0b; }
+.ping-display.bad #pingValue { color:#ef4444; }
+.ping-label { font-size:10px; color:var(--muted); }

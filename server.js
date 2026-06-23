@@ -621,6 +621,11 @@ socket.on('rtc_state', ({ to, state }) => {
   }
 });
 
+  // Ping check
+  socket.on('ping_check', (data, cb) => {
+    if (cb) cb();
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     delete onlineSockets[socket.userId];

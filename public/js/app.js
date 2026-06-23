@@ -89,6 +89,7 @@ function startApp(){
   applyTheme(localStorage.getItem('mtheme')||'purple');
   applyBgEffect(localStorage.getItem('mahfel_bg')||'none');
   connectSocket();updateMyUI();loadServers();
+  setTimeout(startPingMonitor, 3000);
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -403,9 +404,11 @@ function startAudioRelay() {
   if (!localStream) return;
   stopAudioRelay();
   try {
-    audioCtxRelay = new AudioContext({ sampleRate: SAMPLE_RATE });
+    // Use lower sample rate for less delay
+    audioCtxRelay = new AudioContext({ sampleRate: 16000, latencyHint: 'interactive' });
     const src = audioCtxRelay.createMediaStreamSource(localStream);
-    const processor = audioCtxRelay.createScriptProcessor(1024, 1, 1);
+    // 256 samples = ~16ms at 16000Hz (much less delay than 1024)
+    const processor = audioCtxRelay.createScriptProcessor(256, 1, 1);
     src.connect(processor);
     processor.connect(audioCtxRelay.destination);
     
@@ -413,28 +416,26 @@ function startAudioRelay() {
       if (!currentVoiceId || isMuted || !socket.connected) return;
       const input = e.inputBuffer.getChannelData(0);
       
-      // RMS check - only send if there is actual sound
+      // RMS check
       let sum = 0;
       for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
-      const rms = Math.sqrt(sum / input.length);
-      if (rms < 0.003) return;
+      if (Math.sqrt(sum / input.length) < 0.002) return;
       
       const int16 = new Int16Array(input.length);
       for (let i = 0; i < input.length; i++) {
         int16[i] = Math.max(-32768, Math.min(32767, input[i] * 32767));
       }
-      socket.emit('audio_chunk', {
+      socket.volatile.emit('audio_chunk', {
         channelId: currentVoiceId,
         chunk: Array.from(int16),
-        sampleRate: SAMPLE_RATE
+        sampleRate: 16000
       });
     };
     
     audioSender = processor;
-    console.log('✅ Audio relay started, sampleRate:', SAMPLE_RATE);
+    console.log('✅ Audio relay started - low latency mode');
   } catch(e) {
     console.error('Audio relay error:', e);
-    showToast('خطا در شروع صدا: ' + e.message);
   }
 }
 
@@ -443,8 +444,6 @@ function stopAudioRelay() {
   if (audioCtxRelay) { audioCtxRelay.close(); audioCtxRelay = null; }
 }
 
-// Audio queue per user for smooth playback
-const audioQueues = {};
 const nextPlayTime = {};
 
 function playRelayedAudio(userId, int16Data, sampleRate) {
@@ -453,13 +452,16 @@ function playRelayedAudio(userId, int16Data, sampleRate) {
   
   try {
     if (!audioReceivers[userId]) {
-      audioReceivers[userId] = new AudioContext({ sampleRate: sampleRate || SAMPLE_RATE });
+      audioReceivers[userId] = new AudioContext({ 
+        sampleRate: sampleRate || 16000,
+        latencyHint: 'interactive'
+      });
       nextPlayTime[userId] = 0;
     }
     const ctx = audioReceivers[userId];
     if (ctx.state === 'suspended') ctx.resume();
     
-    const buf = ctx.createBuffer(1, int16Data.length, sampleRate || SAMPLE_RATE);
+    const buf = ctx.createBuffer(1, int16Data.length, sampleRate || 16000);
     const data = buf.getChannelData(0);
     for (let i = 0; i < int16Data.length; i++) {
       data[i] = int16Data[i] / 32767;
@@ -472,16 +474,14 @@ function playRelayedAudio(userId, int16Data, sampleRate) {
     src.connect(gain);
     gain.connect(ctx.destination);
     
-    // Schedule for smooth playback
     const now = ctx.currentTime;
-    if (!nextPlayTime[userId] || nextPlayTime[userId] < now) {
-      nextPlayTime[userId] = now + 0.05;
+    // Minimal jitter buffer - only 20ms ahead
+    if (!nextPlayTime[userId] || nextPlayTime[userId] < now - 0.1) {
+      nextPlayTime[userId] = now + 0.02;
     }
     src.start(nextPlayTime[userId]);
     nextPlayTime[userId] += buf.duration;
-  } catch(e) {
-    console.error('playRelayedAudio error:', e);
-  }
+  } catch(e) {}
 }
 
 // ─── VOICE ────────────────────────────────────────────────────────────────────
@@ -1696,3 +1696,24 @@ function shareInvite(){
     showToast('لینک کپی شد ✅');
   }
 }
+
+// ─── PING DISPLAY ─────────────────────────────────────────────────────────────
+function startPingMonitor() {
+  setInterval(() => {
+    if (!socket?.connected) return;
+    const start = Date.now();
+    socket.volatile.emit('ping_check', {}, () => {
+      const ping = Date.now() - start;
+      const el = $('pingValue');
+      const wrap = $('pingDisplay');
+      if (!el || !wrap) return;
+      el.textContent = ping;
+      wrap.classList.remove('lag','bad');
+      if (ping > 150) wrap.classList.add('bad');
+      else if (ping > 80) wrap.classList.add('lag');
+    });
+  }, 3000);
+}
+
+// Ping starts in startApp
+
