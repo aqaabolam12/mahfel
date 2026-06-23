@@ -1,3 +1,4 @@
+// GapHub v2.0 - React Edition
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -12,6 +13,11 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve React app
+app.use('/app', express.static(path.join(__dirname, 'public', 'app')));
+app.get('/app/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'));
+});
 
 // ─── FILE-BASED STORAGE ──────────────────────────────────────────────────────
 // Railway persistent volume at /data, fallback to local
