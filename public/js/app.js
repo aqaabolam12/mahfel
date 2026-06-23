@@ -20,6 +20,40 @@ const THEMES={
 };
 
 
+
+// ─── LOCAL VOLUME CONTROL ────────────────────────────────────────────────────
+const localVolumes = {}; // { userId: 0-1 }
+const localMutes = {};   // { userId: true/false }
+const peerAudios = {};   // { socketId: HTMLAudioElement }
+
+function setLocalVolume(userId, vol) {
+  localVolumes[userId] = vol;
+  // Apply to all audio elements for this user
+  Object.entries(peerAudios).forEach(([sid, audio]) => {
+    if(audio.dataset.userId === userId) {
+      audio.volume = localMutes[userId] ? 0 : vol;
+    }
+  });
+  showToast(`🔊 صدای ${getUserName(userId)}: ${Math.round(vol*100)}%`);
+}
+
+function toggleLocalMute(userId) {
+  localMutes[userId] = !localMutes[userId];
+  const vol = localVolumes[userId] ?? 1;
+  Object.entries(peerAudios).forEach(([sid, audio]) => {
+    if(audio.dataset.userId === userId) {
+      audio.volume = localMutes[userId] ? 0 : vol;
+    }
+  });
+  renderVoiceParticipants(Object.values(voiceRooms[currentVoiceId] || {}));
+  showToast(localMutes[userId] ? `🔇 میوت کردی` : `🔊 آنمیوت کردی`);
+}
+
+function getUserName(userId) {
+  const u = onlineUsers[userId] || serverMembers[currentServerId]?.find(m=>m.id===userId);
+  return u?.username || userId;
+}
+
 // ─── SOUNDS ───────────────────────────────────────────────────────────────────
 function playJoinSound() {
   try {
@@ -141,6 +175,15 @@ function connectSocket(){
   socket.on('user_online',user=>{onlineUsers[user.id]=user;renderMemberList();});
   socket.on('user_offline',({id})=>{delete onlineUsers[id];renderMemberList();});
   socket.on('voice_update',({channelId,users})=>{
+    voiceRooms_client[channelId]=users;
+    // Link audio elements to userIds
+    users.forEach(u=>{
+      Object.entries(peerAudios).forEach(([sid,audio])=>{
+        if(!audio.dataset.userId) {
+          // try to match by process of elimination
+        }
+      });
+    });
     updateVoiceUsersSidebar(channelId,users);
     if(channelId===currentVoiceId)renderVoiceParticipants(users);
   });
@@ -175,6 +218,11 @@ function connectSocket(){
     });
     botPlayAudio(url);
   });
+  socket.on('bot_play_url',({url,channelId,username})=>{
+    // Direct URL play
+    const title = url.split('/').pop() || 'آهنگ';
+    socket.emit('bot_play', {title, url, requestedBy: username});
+  });
   socket.on('bot_stop',()=>{
     if(botAudio){botAudio.pause();botAudio=null;botPlaying=false;}
     appendBotMessage('⏹ موزیک متوقف شد');
@@ -205,8 +253,16 @@ function createPC(socketId){
   peerConnections[socketId]=pc;
   pc.onicecandidate=e=>{if(e.candidate)socket.emit('rtc_candidate',{to:socketId,candidate:e.candidate});};
   pc.ontrack=e=>{
-    const audio=new Audio();audio.srcObject=e.streams[0];audio.autoplay=true;
-    document.body.appendChild(audio);audio.play().catch(()=>{});
+    const audio=new Audio();
+    audio.srcObject=e.streams[0];
+    audio.autoplay=true;
+    audio.dataset.socketId=socketId;
+    // find userId from voice room
+    const vcUsers=voiceRooms_client[currentVoiceId]||[];
+    // store by socketId for now, update when we know userId
+    peerAudios[socketId]=audio;
+    document.body.appendChild(audio);
+    audio.play().catch(()=>{});
   };
   return pc;
 }
@@ -221,17 +277,23 @@ function handleBotCommand(msg){
       socket.emit('bot_search',{query:query.trim(),channelId:currentChannelId,username:me.username});
       appendBotMessage(`🔍 دنبال **${query.trim()}** میگردم...`);
     }
+    // لینک مستقیم
+    else if(text.startsWith('!url ')){
+      const url=text.slice(5).trim();
+      socket.emit('bot_play_url',{url,channelId:currentChannelId,username:me.username});
+    }
     // !stop
     else if(text==='!stop'||text==='استاپ'){
       socket.emit('bot_command',{cmd:'stop',channelId:currentChannelId});
+      if(botAudio){botAudio.pause();botAudio=null;}
     }
     // !skip
     else if(text==='!skip'||text==='اسکیپ'){
       socket.emit('bot_command',{cmd:'skip',channelId:currentChannelId});
     }
-    // !q یا !queue
-    else if(text==='!q'||text==='!queue'){
-      socket.emit('bot_command',{cmd:'queue',channelId:currentChannelId});
+    // !help
+    else if(text==='!help'||text==='!راهنما'){
+      appendBotMessage(`📋 **دستورات بات موزیک:**\n!p اسم آهنگ — جستجو\n!url لینک — پخش مستقیم MP3\n!stop — توقف\n!skip — بعدی`);
     }
   }
 }
@@ -457,13 +519,29 @@ function toggleMic(){
 function renderVoiceParticipants(users){
   const area=document.getElementById('vcParticipants');
   if(!users.length){area.innerHTML='<div style="color:var(--text-muted);font-size:14px">هنوز کسی نیست...</div>';return;}
-  area.innerHTML=users.map(u=>`
-    <div class="vc-user">
-      <div class="vc-avatar ${u.speaking?'speaking':''}" data-uid="${u.id}" style="background:linear-gradient(135deg,${u.color},${u.color}cc)">
+  area.innerHTML=users.map(u=>{
+    const isMe=u.id===me?.id;
+    const isMutedLocally=localMutes[u.id];
+    const vol=localVolumes[u.id]??1;
+    return `<div class="vc-user" id="vcu-${u.id}">
+      <div class="vc-avatar ${u.speaking&&!isMutedLocally?'speaking':''}" data-uid="${u.id}" 
+           style="background:linear-gradient(135deg,${u.color},${u.color}cc);
+                  ${isMutedLocally?'filter:grayscale(1);opacity:0.5':''}">
         ${u.muted?'🔇':u.avatar}
       </div>
       <div class="vc-uname">${u.username}${u.muted?' 🔇':''}</div>
-    </div>`).join('');
+      ${!isMe?`
+      <div class="vc-vol-ctrl">
+        <button class="vc-local-mute ${isMutedLocally?'active':''}" onclick="toggleLocalMute('${u.id}')" title="میوت برای خودت">
+          ${isMutedLocally?'🔇':'🔊'}
+        </button>
+        <input type="range" class="vc-vol-slider" min="0" max="100" value="${Math.round(vol*100)}"
+          oninput="setLocalVolume('${u.id}',this.value/100)"
+          title="تنظیم صدا">
+      </div>`:
+      '<div class="vc-uname" style="font-size:11px;color:var(--accent)">شما</div>'}
+    </div>`;
+  }).join('');
 }
 function updateVoiceUsersSidebar(channelId,users){
   const el=document.getElementById(`vul-${channelId}`);if(!el)return;

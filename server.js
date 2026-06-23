@@ -355,6 +355,11 @@ io.on('connection', socket => {
     });
   });
 
+  socket.on('bot_play_url', ({ url, channelId, username }) => {
+    const title = decodeURIComponent(url.split('/').pop() || 'آهنگ');
+    io.to(`channel:${channelId}`).emit('bot_play', { title, url, requestedBy: username });
+  });
+
   socket.on('bot_command', ({ cmd, channelId }) => {
     if (cmd === 'stop') io.to(`channel:${channelId}`).emit('bot_stop');
     if (cmd === 'skip') io.to(`channel:${channelId}`).emit('bot_skip');
