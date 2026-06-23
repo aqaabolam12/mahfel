@@ -237,8 +237,16 @@ app.get('/api/servers/:id/roles', authMiddleware, (req, res) => {
 app.post('/api/servers/:id/roles', authMiddleware, (req, res) => {
   const s = db.servers[req.params.id];
   if (!s) return res.json({ ok: false });
+  // For default server, first user becomes owner
+  if (s.id === 'default' && !s.ownerId) {
+    s.ownerId = req.userId;
+    let m = s.members.find(m => m.id === req.userId);
+    if (!m) s.members.push({ id: req.userId, role: 'owner' });
+    else m.role = 'owner';
+    saveDB();
+  }
   if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
-    return res.json({ ok: false, msg: 'دسترسی نداری' });
+    return res.json({ ok: false, msg: 'دسترسی نداری — فقط owner یا admin میتونه رول بسازه' });
   const { name, color, permissions } = req.body;
   if (!s.roles) s.roles = [];
   const role = { id: uuidv4(), name, color: color||'#7c6af7', permissions: permissions||[] };
@@ -281,8 +289,13 @@ app.post('/api/servers/:id/members/:uid/assign-role', authMiddleware, (req, res)
 app.post('/api/servers/:id/profile', authMiddleware, (req, res) => {
   const s = db.servers[req.params.id];
   if (!s) return res.json({ ok: false });
-  const member = s.members.find(m => m.id === req.userId);
-  if (!member) return res.json({ ok: false });
+  let member = s.members.find(m => m.id === req.userId);
+  // Auto-add to default server if not member
+  if (!member) {
+    member = { id: req.userId, role: 'member' };
+    s.members.push(member);
+    saveDB();
+  }
   const { nickname, avatarColor } = req.body;
   if (nickname !== undefined) member.nickname = nickname;
   if (avatarColor !== undefined) member.avatarColor = avatarColor;

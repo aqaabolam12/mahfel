@@ -379,18 +379,3 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
   font-size: 20px; transition: .15s; flex-shrink: 0;
 }
 .ch-toggle-btn:hover { color: var(--accent); }
-
-/* ─── AUDIO SETTINGS ─────────────────────────────────────── */
-.mic-test-wrap {
-  display:flex; align-items:center; gap:10px; margin-bottom:16px;
-  background:var(--bg-input); border:1px solid var(--border);
-  border-radius:10px; padding:12px;
-}
-.mic-meter-wrap {
-  flex:1; height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;
-}
-.mic-meter {
-  height:100%; width:0%; border-radius:4px;
-  background:linear-gradient(90deg,var(--accent),#00ff88);
-  transition:width .05s;
-}
