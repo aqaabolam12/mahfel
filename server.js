@@ -219,10 +219,24 @@ app.patch('/api/users/me', authMiddleware, (req, res) => {
 app.get('/api/servers/:id/members', authMiddleware, (req, res) => {
   const s = db.servers[req.params.id];
   if (!s) return res.json({ ok: false });
+  
+  // Auto-add requester to default server
+  if (s.id === 'default' && !s.members.find(m => m.id === req.userId)) {
+    s.members.push({ id: req.userId, role: 'member' });
+    saveDB();
+  }
+  
   const members = s.members.map(m => {
     const u = db.users[m.id];
     if (!u) return null;
-    return { ...sanitize(u), serverRole: m.role };
+    const customRoles = (s.roles || []).filter(r => m.roles?.includes(r.id));
+    return { 
+      ...sanitize(u), 
+      serverRole: m.role,
+      roles: m.roles || [],
+      customRoles,
+      nickname: m.nickname || null,
+    };
   }).filter(Boolean);
   res.json({ ok: true, members });
 });
@@ -421,6 +435,7 @@ io.on('connection', socket => {
 
   // ── Voice ─────────────────────────────────────────────────────────────────
   socket.on('join_voice', ({ channelId }) => {
+    // Leave old voice rooms
     Object.keys(voiceRooms).forEach(cid => {
       if (voiceRooms[cid].find(u => u.id === socket.userId)) {
         voiceRooms[cid] = voiceRooms[cid].filter(u => u.id !== socket.userId);
@@ -428,12 +443,38 @@ io.on('connection', socket => {
         io.emit('voice_update', { channelId: cid, users: voiceRooms[cid] });
       }
     });
+    
     if (!voiceRooms[channelId]) voiceRooms[channelId] = [];
+    
+    // Get existing users BEFORE adding new one
+    const existingUsers = [...voiceRooms[channelId]];
+    
+    // Add new user
     voiceRooms[channelId].push({ ...sanitize(user), muted: false, speaking: false });
     socket.currentVoice = channelId;
     socket.join(`voice:${channelId}`);
+    
+    // Update everyone
     io.emit('voice_update', { channelId, users: voiceRooms[channelId] });
-    socket.to(`voice:${channelId}`).emit('voice_user_joined', { user: sanitize(user), socketId: socket.id });
+    
+    // Tell existing users about new joiner (they initiate offer)
+    existingUsers.forEach(existingUser => {
+      const existingSocket = onlineSockets[existingUser.id];
+      if (existingSocket) {
+        io.to(existingSocket).emit('voice_user_joined', { 
+          user: sanitize(user), 
+          socketId: socket.id 
+        });
+      }
+    });
+    
+    // Tell new user who's already there (so they can receive)
+    socket.emit('voice_existing_users', { 
+      users: existingUsers.map(u => ({
+        user: u,
+        socketId: onlineSockets[u.id]
+      })).filter(x => x.socketId)
+    });
   });
 
   socket.on('leave_voice', ({ channelId }) => {

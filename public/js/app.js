@@ -292,26 +292,54 @@ function connectSocket(){
   socket.on('bot_stop',()=>{if(botAudio){botAudio.pause();botAudio=null;}appendBotMsg('⏹ متوقف شد');});
   socket.on('bot_message',({text})=>appendBotMsg(text));
   socket.on('roles_updated',({serverId,roles})=>{serverRoles[serverId]=roles;});
-  // WebRTC
+  // WebRTC - existing users tell new joiner who's there
+  socket.on('voice_existing_users',async({users})=>{
+    for(const {user:u,socketId} of users){
+      if(!socketId||socketId===socket.id)continue;
+      socketUserMap[socketId]=u.id;
+      // New user creates PC and waits for offer from existing
+      newPC(socketId,u.id);
+    }
+  });
+
+  // Existing user initiates offer to new joiner
   socket.on('voice_user_joined',async({user:u,socketId})=>{
     if(!localStream)return;
     socketUserMap[socketId]=u.id;
     const pc=newPC(socketId,u.id);
     localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-    const offer=await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('rtc_offer',{to:socketId,offer});
+    try{
+      const offer=await pc.createOffer({offerToReceiveAudio:true});
+      await pc.setLocalDescription(offer);
+      socket.emit('rtc_offer',{to:socketId,offer});
+    }catch(e){console.error('offer error',e);}
   });
+
   socket.on('rtc_offer',async({from,offer})=>{
-    const pc=newPC(from,socketUserMap[from]||null);
-    if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-    await pc.setRemoteDescription(offer);
-    const ans=await pc.createAnswer();
-    await pc.setLocalDescription(ans);
-    socket.emit('rtc_answer',{to:from,answer:ans});
+    socketUserMap[from]=socketUserMap[from]||null;
+    let pc=peerConnections[from];
+    if(!pc) pc=newPC(from,socketUserMap[from]);
+    if(localStream) localStream.getTracks().forEach(t=>{
+      if(!pc.getSenders().find(s=>s.track===t)) pc.addTrack(t,localStream);
+    });
+    try{
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const ans=await pc.createAnswer();
+      await pc.setLocalDescription(ans);
+      socket.emit('rtc_answer',{to:from,answer:ans});
+    }catch(e){console.error('answer error',e);}
   });
-  socket.on('rtc_answer',async({from,answer})=>{try{await peerConnections[from]?.setRemoteDescription(answer);}catch(e){}});
-  socket.on('rtc_candidate',async({from,candidate})=>{try{await peerConnections[from]?.addIceCandidate(candidate);}catch(e){}});
+
+  socket.on('rtc_answer',async({from,answer})=>{
+    const pc=peerConnections[from];
+    if(pc&&pc.signalingState!=='stable'){
+      try{await pc.setRemoteDescription(new RTCSessionDescription(answer));}catch(e){}
+    }
+  });
+  socket.on('rtc_candidate',async({from,candidate})=>{
+    const pc=peerConnections[from];
+    if(pc&&candidate){try{await pc.addIceCandidate(new RTCIceCandidate(candidate));}catch(e){}}
+  });
   socket.on('force_disconnect_voice',()=>{if(currentVoiceId){leaveVoice();showToast('⚡ ادمین تو رو از ویس دیسکانکت کرد');}});
   socket.on('server_updated',({serverId,name,icon,iconUrl})=>{
     const srv=myServers.find(s=>s.id===serverId);
@@ -511,12 +539,13 @@ async function selectServer(id){
 async function loadMembers(sid){
   try{
     const d=await api(`/api/servers/${sid}/members`);
-    if(d.ok){
+    if(d.ok&&d.members){
       serverMembers[sid]=d.members;
-      myServerRole=d.members.find(m=>m.id===me?.id)?.serverRole||'member';
+      const mine=d.members.find(m=>m.id===me?.id);
+      myServerRole=mine?.serverRole||'member';
       renderMemberList();renderChannels();
     }
-  }catch(e){}
+  }catch(e){console.error('loadMembers error:',e);}
 }
 function renderChannels(){
   const srv=myServers.find(s=>s.id===currentServerId);if(!srv)return;
@@ -685,14 +714,54 @@ async function loadServerRoles(sid){
 function renderRolesList(sid){
   const roles=serverRoles[sid]||[];
   const canEdit=['owner','admin'].includes(myServerRole);
-  $('rolesList').innerHTML=roles.length?roles.map(r=>`
-    <div class="role-item">
+  const rolesList=$('rolesList');
+  if(!rolesList)return;
+  rolesList.innerHTML=roles.length?roles.map(r=>{
+    const permsCount=(r.permissions||[]).length;
+    return `<div class="role-item">
       <div class="role-dot" style="background:${r.color}"></div>
       <div class="role-name">${r.name}</div>
-      <div style="font-size:11px;color:${r.color};padding:2px 8px;border-radius:4px;background:${r.color}22">${r.color}</div>
-      ${canEdit?`<button class="danger-btn" style="padding:5px 12px;font-size:12px" onclick="deleteRole('${r.id}')">حذف</button>`:''}
-    </div>`).join('')
-    :'<div style="color:var(--muted);text-align:center;padding:20px">هنوز رولی نساختی<br><small>یه رول بساز و به اعضا بده</small></div>';
+      <div style="font-size:11px;color:${r.color};padding:2px 8px;border-radius:4px;background:${r.color}22">${permsCount} قانون</div>
+      ${canEdit?`
+        <button class="role-edit-btn" onclick="openRoleEdit('${r.id}')">✏️ ویرایش</button>
+        <button class="danger-btn" style="padding:5px 10px;font-size:12px" onclick="deleteRole('${r.id}')">حذف</button>
+      `:''}
+    </div>`;
+  }).join('')
+  :'<div style="color:var(--muted);text-align:center;padding:20px">هنوز رولی نساختی</div>';
+}
+
+function openRoleEdit(roleId){
+  const role=(serverRoles[currentServerId]||[]).find(r=>r.id===roleId);
+  if(!role)return;
+  $('roleEditId').value=roleId;
+  $('roleEditName').value=role.name;
+  $('roleEditColor').value=role.color;
+  $('roleEditTitle').textContent=`✏️ ویرایش: ${role.name}`;
+  // Set permissions
+  document.querySelectorAll('.perms-list input[type="checkbox"]').forEach(cb=>{
+    cb.checked=(role.permissions||[]).includes(cb.value);
+  });
+  $('roleEditPanel').classList.remove('hidden');
+}
+
+function closeRoleEdit(){
+  $('roleEditPanel').classList.add('hidden');
+}
+
+async function saveRoleEdit(){
+  const roleId=$('roleEditId').value;
+  const name=$('roleEditName').value.trim();
+  const color=$('roleEditColor').value;
+  const permissions=Array.from(document.querySelectorAll('.perms-list input:checked')).map(cb=>cb.value);
+  
+  const d=await api(`/api/servers/${currentServerId}/roles/${roleId}`,'PATCH',{name,color,permissions});
+  if(d.ok){
+    serverRoles[currentServerId]=d.roles||serverRoles[currentServerId].map(r=>r.id===roleId?{...r,name,color,permissions}:r);
+    await loadServerRoles(currentServerId);
+    closeRoleEdit();
+    showToast('رول آپدیت شد ✅');
+  }else showToast(d.msg||'خطا');
 }
 async function createRole(){
   const name=$('newRoleName').value.trim(),color=$('newRoleColor').value;

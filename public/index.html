@@ -186,6 +186,34 @@
       <div id="rolesList" class="roles-list"></div>
     </div>
 
+    <!-- Role Edit Modal (inline) -->
+    <div id="roleEditPanel" class="role-edit-panel hidden">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <button class="icon-btn" onclick="closeRoleEdit()">←</button>
+        <div id="roleEditTitle" style="font-size:16px;font-weight:700">ویرایش رول</div>
+      </div>
+      <input id="roleEditName" class="auth-input" placeholder="اسم رول">
+      <input id="roleEditColor" type="color" class="color-pick" style="width:60px;height:44px;margin-bottom:16px">
+      <div class="section-label">🔐 قوانین و دسترسی‌ها</div>
+      <div class="perms-list">
+        <label class="perm-item"><input type="checkbox" value="send_messages"> 💬 ارسال پیام</label>
+        <label class="perm-item"><input type="checkbox" value="join_voice"> 🎤 پیوستن به ویس</label>
+        <label class="perm-item"><input type="checkbox" value="speak_voice"> 🔊 صحبت در ویس</label>
+        <label class="perm-item"><input type="checkbox" value="manage_messages"> ✏️ مدیریت پیام‌ها</label>
+        <label class="perm-item"><input type="checkbox" value="kick_members"> 🚪 کیک کاربران</label>
+        <label class="perm-item"><input type="checkbox" value="ban_members"> 🔨 بن کاربران</label>
+        <label class="perm-item"><input type="checkbox" value="manage_channels"> 📢 مدیریت کانال‌ها</label>
+        <label class="perm-item"><input type="checkbox" value="manage_roles"> 🎭 مدیریت رول‌ها</label>
+        <label class="perm-item"><input type="checkbox" value="use_soundboard"> 🎛 استفاده از ساندبورد</label>
+        <label class="perm-item"><input type="checkbox" value="move_members"> 📡 انتقال کاربران</label>
+      </div>
+      <input type="hidden" id="roleEditId">
+      <div class="m-actions">
+        <button class="auth-btn" onclick="saveRoleEdit()">💾 ذخیره</button>
+        <button class="m-cancel" onclick="closeRoleEdit()">لغو</button>
+      </div>
+    </div>
+
     <!-- Server Profile Tab -->
     <div id="stab-profile" class="stab-content hidden">
       <div class="section-label">نام‌مستعار در این سرور (اختیاری)</div>
