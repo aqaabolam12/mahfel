@@ -390,23 +390,32 @@ function newPC(sid,uid){
 
 // ─── VOICE ────────────────────────────────────────────────────────────────────
 async function joinVoice(channelId){
-  // بارگذاری میکروفون انتخاب شده
   const savedMic=localStorage.getItem('mahfel_mic')||'';
   if(savedMic) selectedMicId=savedMic;
   
-  const audioConstraints = getAudioConstraints();
-  
   try{
+    const audioConstraints=getAudioConstraints();
+    console.log('Getting mic with constraints:', audioConstraints);
     localStream=await navigator.mediaDevices.getUserMedia({audio:audioConstraints});
+    console.log('Got local stream, tracks:', localStream.getAudioTracks().length);
     startSpeakDetect();
     socket.emit('join_voice',{channelId});
     currentVoiceId=channelId;
     playTone([523,659,784]);
     showToast('🎤 به ویس پیوستی');
   }catch(e){
+    console.error('Mic error:', e);
+    // Try without constraints
+    try{
+      localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+      console.log('Got stream with basic constraints');
+      startSpeakDetect();
+    }catch(e2){
+      console.error('No mic at all:', e2);
+      showToast('⚠️ میکروفون پیدا نشد — فقط میشنوی');
+    }
     socket.emit('join_voice',{channelId});
     currentVoiceId=channelId;
-    showToast('⚠️ بدون میکروفون');
   }
 }
 function startSpeakDetect(){
@@ -1421,3 +1430,24 @@ async function disconnectFromVoice(){
 
 
 
+
+// ─── VOICE DEBUG ──────────────────────────────────────────────────────────────
+function checkVoiceDebug(){
+  const lines=[];
+  lines.push(`📡 Socket: ${socket?.connected?'✅ وصل':'❌ قطع'}`);
+  lines.push(`🎤 میکروفون: ${localStream?`✅ ${localStream.getAudioTracks().length} track`:'❌ نداریم'}`);
+  lines.push(`👥 Peer Connections: ${Object.keys(peerConnections).length}`);
+  
+  Object.entries(peerConnections).forEach(([sid,pc])=>{
+    lines.push(`  📶 ${sid.slice(0,8)}: ${pc.connectionState} / ICE: ${pc.iceConnectionState}`);
+  });
+  
+  lines.push(`🔊 Audio Elements: ${Object.keys(peerAudios).length}`);
+  Object.entries(peerAudios).forEach(([sid,audio])=>{
+    lines.push(`  🎧 ${sid.slice(0,8)}: paused=${audio.paused}, vol=${audio.volume}, muted=${audio.muted}`);
+  });
+  
+  const msg=lines.join('\n');
+  alert(msg);
+  console.log('VOICE DEBUG:\n'+msg);
+}
