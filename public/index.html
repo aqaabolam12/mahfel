@@ -92,28 +92,36 @@
     </div>
 
     <div class="content-body">
-      <!-- VOICE VIEW -->
+      <!-- VOICE VIEW - Discord Style -->
       <div id="voiceView" class="voice-view hidden">
-        <!-- Screen Share - top, big -->
-        <div id="screenShareArea" class="screen-share-area hidden">
-          <div class="ss-header">
-            <span id="ssUsername">🖥 اشتراک صفحه</span>
-            <button class="ss-close" onclick="stopWatchingScreen()">✕</button>
+        <div class="vc-main">
+          <!-- Screen share grid -->
+          <div id="vcScreenGrid" class="vc-screen-grid hidden">
+            <div class="vc-screen-cell">
+              <video id="screenShareVideo" autoplay playsinline></video>
+              <div class="vc-screen-label" id="ssUsername">🖥 اشتراک صفحه</div>
+            </div>
           </div>
-          <video id="screenShareVideo" autoplay playsinline muted></video>
+          <!-- Participants -->
+          <div id="vcParticipants" class="vc-participants"></div>
         </div>
-        <!-- Participants - bottom strip like Discord -->
-        <div class="vc-header">
-          <span id="vcTitle">🔊 ویس عمومی</span>
-        </div>
-        <div id="vcParticipants" class="vc-participants"></div>
-
-        <div class="vc-bar">
-          <button class="vc-btn" id="vcMuteBtn" onclick="toggleVcMic()">🎤</button>
-          <button class="vc-btn" id="deafenBtn" onclick="toggleDeafen()">🔊</button>
-          <button class="vc-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥</button>
-          <button class="vc-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎛</button>
-          <button class="vc-btn danger" onclick="leaveVoice()">📵 خروج</button>
+        <!-- Discord toolbar -->
+        <div class="vc-toolbar">
+          <div class="vc-toolbar-left">
+            <span class="vc-signal">🟢</span>
+            <span id="vcTitle" class="vc-ch-name">ویس عمومی</span>
+          </div>
+          <div class="vc-toolbar-center">
+            <button class="vc-tool-btn" id="vcMuteBtn" onclick="toggleVcMic()" title="میکروفون">🎤</button>
+            <button class="vc-tool-btn" id="deafenBtn" onclick="toggleDeafen()" title="هدفون">🎧</button>
+            <button class="vc-tool-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥</button>
+            <button class="vc-tool-btn" id="cameraBtn" onclick="toggleCamera()" title="دوربین">📷</button>
+            <button class="vc-tool-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎛</button>
+            <button class="vc-tool-btn" onclick="toggleMemberList()" title="اعضا">👥</button>
+          </div>
+          <div class="vc-toolbar-right">
+            <button class="vc-leave-btn" onclick="leaveVoice()">📵</button>
+          </div>
         </div>
       </div>
 
