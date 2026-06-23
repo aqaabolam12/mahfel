@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════
+   محفل — CYBERPUNK THEME ENGINE
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── THEME VARIABLES ─────────────────────────────────────── */
+:root {
+  --t-bg:      #0a0a0f;
+  --t-panel:   #0d0d18;
+  --t-border:  rgba(124,106,247,0.2);
+  --t-accent:  #7c6af7;
+  --t-accent2: #a855f7;
+  --t-glow:    rgba(124,106,247,0.4);
+  --t-text:    #e2e8f0;
+  --t-muted:   #4a5568;
+  --t-online:  #00ff88;
+}
+
+/* ─── HONEYCOMB PATTERN ────────────────────────────────────── */
+[data-theme="honeycomb"] body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34z' fill='none' stroke='%237c6af7' stroke-width='0.4' opacity='0.3'/%3E%3Cpath d='M28 100L0 84V50l28-16 28 16v34z' fill='none' stroke='%237c6af7' stroke-width='0.4' opacity='0.3'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ─── CIRCUIT PATTERN ─────────────────────────────────────── */
+[data-theme="circuit"] body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cpath d='M10 10h30v10H10zM50 10h10v30H50zM70 40h20v10H70zM10 60h10v20H10zM30 70h40v10H30z' fill='none' stroke='%237c6af7' stroke-width='0.5' opacity='0.2'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%237c6af7' opacity='0.3'/%3E%3Ccircle cx='50' cy='40' r='3' fill='%23a855f7' opacity='0.3'/%3E%3Ccircle cx='90' cy='50' r='3' fill='%237c6af7' opacity='0.3'/%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+/* ─── GRID 3D ─────────────────────────────────────────────── */
+[data-theme="grid3d"] body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(124,106,247,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,106,247,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: perspective(500px) rotateX(30deg);
+  transform-origin: top center;
+  height: 200%;
+}
+
+/* ─── NEON NOISE PARTICLES (canvas-based, see JS) ──────────── */
+
+/* ─── GLITCH EFFECT ───────────────────────────────────────── */
+.glitch-text {
+  position:relative;
+}
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+}
+.glitch-text::before {
+  animation: glitch1 3s infinite;
+  color: #0ff; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+  transform: translate(-2px, 0);
+  opacity: 0.6;
+}
+.glitch-text::after {
+  animation: glitch2 3s infinite;
+  color: #f0f; clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+  transform: translate(2px, 0);
+  opacity: 0.6;
+}
+@keyframes glitch1 {
+  0%,90%,100% { transform:translate(0); opacity:0; }
+  91% { transform:translate(-2px,1px); opacity:0.6; }
+  92% { transform:translate(2px,-1px); opacity:0.6; }
+  93% { transform:translate(0); opacity:0; }
+}
+@keyframes glitch2 {
+  0%,90%,100% { transform:translate(0); opacity:0; }
+  94% { transform:translate(2px,1px); opacity:0.6; }
+  95% { transform:translate(-2px,-1px); opacity:0.6; }
+  96% { transform:translate(0); opacity:0; }
+}
+
+/* ─── ENERGY WAVES ────────────────────────────────────────── */
+.energy-wave {
+  position:fixed; bottom:-50%; left:-25%; right:-25%;
+  height:200px; border-radius:50%;
+  background: radial-gradient(ellipse, rgba(124,106,247,0.05) 0%, transparent 70%);
+  animation: waveMove 8s ease-in-out infinite;
+  pointer-events:none; z-index:0;
+}
+.energy-wave:nth-child(2) { animation-delay: -3s; opacity:0.5; }
+.energy-wave:nth-child(3) { animation-delay: -6s; opacity:0.3; }
+@keyframes waveMove {
+  0%,100% { transform:translateY(0) scaleX(1); }
+  50% { transform:translateY(-20px) scaleX(1.05); }
+}
+
+/* ─── NEON LIGHTNING ──────────────────────────────────────── */
+.lightning-bg {
+  position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+}
+.lightning-bolt {
+  position:absolute; width:1px; height:100vh;
+  background: linear-gradient(to bottom, transparent, rgba(124,106,247,0.6), transparent);
+  animation: lightning 6s ease-in-out infinite;
+  opacity:0;
+}
+.lightning-bolt:nth-child(1) { left:20%; animation-delay:0s; }
+.lightning-bolt:nth-child(2) { left:50%; animation-delay:2s; }
+.lightning-bolt:nth-child(3) { left:80%; animation-delay:4s; }
+@keyframes lightning {
+  0%,90%,100% { opacity:0; }
+  92% { opacity:0.4; transform:scaleX(3); }
+  93% { opacity:0; }
+  95% { opacity:0.2; }
+  96% { opacity:0; }
+}
+
+/* ─── PANEL GLASS EFFECT ──────────────────────────────────── */
+.cyber-panel {
+  background: rgba(13,13,24,0.8) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(124,106,247,0.2) !important;
+  box-shadow: 0 0 20px rgba(124,106,247,0.1), inset 0 0 20px rgba(0,0,0,0.5) !important;
+}
+
+/* ─── NEON SCROLLBAR ──────────────────────────────────────── */
+[data-theme]::-webkit-scrollbar { width:4px; }
+[data-theme]::-webkit-scrollbar-track { background:rgba(124,106,247,0.05); }
+[data-theme]::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--t-accent), var(--t-accent2));
+  border-radius:4px;
+  box-shadow: 0 0 6px var(--t-glow);
+}
+
+/* ─── NEON BUTTON ─────────────────────────────────────────── */
+.neon-btn {
+  border: 1px solid var(--t-accent) !important;
+  box-shadow: 0 0 8px var(--t-glow), inset 0 0 8px rgba(124,106,247,0.05) !important;
+  transition: all .2s !important;
+}
+.neon-btn:hover {
+  box-shadow: 0 0 16px var(--t-glow), 0 0 32px var(--t-glow), inset 0 0 16px rgba(124,106,247,0.1) !important;
+}
+
+/* ─── THEME SELECTOR UI ───────────────────────────────────── */
+.theme-selector {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;
+}
+.theme-card {
+  padding:12px 8px; border-radius:10px; cursor:pointer; text-align:center;
+  border:2px solid transparent; background:var(--bg-card); transition:.2s;
+  font-size:12px; color:var(--text-muted);
+}
+.theme-card:hover { border-color:var(--accent); color:var(--text-main); }
+.theme-card.active { border-color:var(--accent); color:var(--accent); background:rgba(124,106,247,0.1); }
+.theme-card .theme-preview { font-size:24px; margin-bottom:6px; }
+

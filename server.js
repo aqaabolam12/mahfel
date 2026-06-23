@@ -206,10 +206,11 @@ app.post('/api/servers/:id/members/:uid/ban', authMiddleware, (req, res) => {
 app.patch('/api/users/me', authMiddleware, (req, res) => {
   const u = db.users[req.userId];
   if (!u) return res.json({ ok: false });
-  const { bio, status, theme } = req.body;
-  if (bio    !== undefined) u.bio    = bio;
-  if (status !== undefined) u.status = status;
-  if (theme  !== undefined) u.theme  = theme;
+  const { bio, status, theme, avatarUrl } = req.body;
+  if (bio      !== undefined) u.bio      = bio;
+  if (status   !== undefined) u.status   = status;
+  if (theme    !== undefined) u.theme    = theme;
+  if (avatarUrl!== undefined) u.avatarUrl= avatarUrl;
   saveDB();
   res.json({ ok: true, user: sanitize(u) });
 });
@@ -223,6 +224,91 @@ app.get('/api/servers/:id/members', authMiddleware, (req, res) => {
     return { ...sanitize(u), serverRole: m.role };
   }).filter(Boolean);
   res.json({ ok: true, members });
+});
+
+
+// ─── SERVER ROLES MANAGEMENT ─────────────────────────────────────────────────
+app.get('/api/servers/:id/roles', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  res.json({ ok: true, roles: s.roles || [] });
+});
+
+app.post('/api/servers/:id/roles', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const { name, color, permissions } = req.body;
+  if (!s.roles) s.roles = [];
+  const role = { id: uuidv4(), name, color: color||'#7c6af7', permissions: permissions||[] };
+  s.roles.push(role);
+  saveDB();
+  io.to(`server:${s.id}`).emit('roles_updated', { serverId: s.id, roles: s.roles });
+  res.json({ ok: true, role });
+});
+
+app.delete('/api/servers/:id/roles/:roleId', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  s.roles = (s.roles||[]).filter(r => r.id !== req.params.roleId);
+  // Remove role from all members
+  s.members.forEach(m => {
+    if (m.roles) m.roles = m.roles.filter(r => r !== req.params.roleId);
+  });
+  saveDB();
+  res.json({ ok: true });
+});
+
+app.post('/api/servers/:id/members/:uid/assign-role', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!canModerate(req.params.id, req.userId))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const member = s.members.find(m => m.id === req.params.uid);
+  if (!member) return res.json({ ok: false, msg: 'کاربر نیست' });
+  const { roleId } = req.body;
+  if (!member.roles) member.roles = [];
+  if (!member.roles.includes(roleId)) member.roles.push(roleId);
+  saveDB();
+  io.emit('member_role_assigned', { serverId: s.id, userId: req.params.uid, roleId });
+  res.json({ ok: true });
+});
+
+// ─── SERVER PROFILE (avatar per server) ──────────────────────────────────────
+app.post('/api/servers/:id/profile', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  const member = s.members.find(m => m.id === req.userId);
+  if (!member) return res.json({ ok: false });
+  const { nickname, avatarColor } = req.body;
+  if (nickname !== undefined) member.nickname = nickname;
+  if (avatarColor !== undefined) member.avatarColor = avatarColor;
+  saveDB();
+  res.json({ ok: true });
+});
+
+// ─── MOVE USER TO VOICE CHANNEL ───────────────────────────────────────────────
+app.post('/api/servers/:id/members/:uid/move', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!canModerate(req.params.id, req.userId))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const { channelId } = req.body;
+  const targetSocket = onlineSockets[req.params.uid];
+  if (targetSocket) {
+    io.to(targetSocket).emit('force_move', { channelId, serverName: s.name });
+    res.json({ ok: true });
+  } else {
+    res.json({ ok: false, msg: 'کاربر آنلاین نیست' });
+  }
+});
+
+// ─── VERSION ENDPOINT ─────────────────────────────────────────────────────────
+app.get('/api/version', (req, res) => {
+  res.json({ version: '1.0.0', name: 'محفل' });
 });
 
 // ─── SOCKET.IO ────────────────────────────────────────────────────────────────
@@ -327,11 +413,13 @@ io.on('connection', socket => {
   });
 
 
-  // Bot Music - iTunes API (no external deps needed)
+  // Bot Music - Jamendo API (free, full tracks, no time limit)
   socket.on('bot_search', ({ query, channelId, username }) => {
     const https = require('https');
     const encoded = encodeURIComponent(query);
-    const apiUrl = `https://itunes.apple.com/search?term=${encoded}&media=music&limit=5`;
+    // Jamendo free API - full tracks
+    const apiUrl = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=5&namesearch=${encoded}&audioformat=mp32&include=musicinfo`;
+    
     https.get(apiUrl, (res) => {
       let data = '';
       res.on('data', c => data += c);
@@ -339,16 +427,36 @@ io.on('connection', socket => {
         try {
           const result = JSON.parse(data);
           if (!result.results || !result.results.length) {
-            io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ نتیجه‌ای برای «${query}» پیدا نشد` });
+            // Fallback to iTunes if Jamendo has no results
+            const iTunesUrl = `https://itunes.apple.com/search?term=${encoded}&media=music&limit=5`;
+            https.get(iTunesUrl, (res2) => {
+              let d2 = '';
+              res2.on('data', c => d2 += c);
+              res2.on('end', () => {
+                try {
+                  const r2 = JSON.parse(d2);
+                  if (!r2.results?.length) {
+                    io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ نتیجه‌ای برای «${query}» پیدا نشد` });
+                    return;
+                  }
+                  const t = r2.results[0];
+                  io.to(`channel:${channelId}`).emit('bot_play', {
+                    title: `${t.trackName} — ${t.artistName} (30s)`,
+                    url: t.previewUrl, requestedBy: username
+                  });
+                } catch(e) { io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا' }); }
+              });
+            }).on('error', () => io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در اتصال' }));
             return;
           }
           const track = result.results[0];
-          const title = `${track.trackName} — ${track.artistName}`;
-          if (!track.previewUrl) {
-            io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ پیش‌نمایش موجود نیست` });
+          const audioUrl = track.audio || track.audiodownload;
+          if (!audioUrl) {
+            io.to(`channel:${channelId}`).emit('bot_message', { text: `❌ فایل صوتی پیدا نشد` });
             return;
           }
-          io.to(`channel:${channelId}`).emit('bot_play', { title, url: track.previewUrl, requestedBy: username });
+          const title = `${track.name} — ${track.artist_name}`;
+          io.to(`channel:${channelId}`).emit('bot_play', { title, url: audioUrl, requestedBy: username });
         } catch(e) {
           io.to(`channel:${channelId}`).emit('bot_message', { text: '❌ خطا در جستجو' });
         }
