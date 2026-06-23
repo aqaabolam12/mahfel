@@ -29,34 +29,10 @@
 <!-- MAIN APP -->
 <div id="app" class="app hidden">
 
-  <!-- SERVER BAR -->
-  <div class="server-bar">
-    <div class="server-icon active" id="si-default" title="محفل اصلی" onclick="selectServer('default')">🏠</div>
-    <div class="server-sep"></div>
-    <div id="extraServers"></div>
-    <div class="server-icon add-server" title="سرور جدید" onclick="openModal('createServerModal')">＋</div>
-    <div style="margin-top:auto"></div>
-    <div class="server-icon" title="پروفایل" onclick="openModal('profileModal')">👤</div>
-  </div>
-
-  <!-- CHANNEL SIDEBAR -->
-  <div class="channel-sidebar">
-    <div class="server-name-bar">
-      <span id="sidebarServerName">محفل اصلی</span>
-      <span class="srv-options" onclick="openServerOptions()">⚙</span>
-    </div>
-    <div id="channelList" class="channel-list"></div>
-    <div class="user-area">
-      <div class="user-avatar" id="myAvatarEl" style="background:var(--accent)">م</div>
-      <div class="user-info">
-        <div class="uname" id="myUsernameEl">—</div>
-        <div class="ustatus" id="myStatusEl">آنلاین</div>
-      </div>
-      <div class="user-actions">
-        <button class="icon-btn" id="micBtn" title="میکروفون" onclick="toggleMic()">🎤</button>
-        <button class="icon-btn" title="تنظیمات" onclick="openModal('profileModal')">⚙</button>
-      </div>
-    </div>
+  <!-- MEMBER LIST -->
+  <div class="member-list hidden" id="memberList">
+    <div class="ml-title">اعضا آنلاین</div>
+    <div id="memberItems"></div>
   </div>
 
   <!-- MAIN AREA -->
@@ -97,10 +73,34 @@
     </div>
   </div>
 
-  <!-- MEMBER LIST -->
-  <div class="member-list hidden" id="memberList">
-    <div class="ml-title">اعضا آنلاین</div>
-    <div id="memberItems"></div>
+  <!-- CHANNEL SIDEBAR -->
+  <div class="channel-sidebar">
+    <div class="server-name-bar">
+      <span id="sidebarServerName">محفل اصلی</span>
+      <span class="srv-options" onclick="openServerOptions()">⚙</span>
+    </div>
+    <div id="channelList" class="channel-list"></div>
+    <div class="user-area">
+      <div class="user-avatar" id="myAvatarEl" style="background:var(--accent)">م</div>
+      <div class="user-info">
+        <div class="uname" id="myUsernameEl">—</div>
+        <div class="ustatus" id="myStatusEl">آنلاین</div>
+      </div>
+      <div class="user-actions">
+        <button class="icon-btn" id="micBtn" title="میکروفون" onclick="toggleMic()">🎤</button>
+        <button class="icon-btn" title="تنظیمات" onclick="openModal('profileModal')">⚙</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVER BAR -->
+  <div class="server-bar">
+    <div class="server-icon active" id="si-default" title="محفل اصلی" onclick="selectServer('default')">🏠</div>
+    <div class="server-sep"></div>
+    <div id="extraServers"></div>
+    <div class="server-icon add-server" title="سرور جدید" onclick="openModal('createServerModal')">＋</div>
+    <div style="margin-top:auto"></div>
+    <div class="server-icon" title="پروفایل" onclick="openModal('profileModal')">👤</div>
   </div>
 </div>
 

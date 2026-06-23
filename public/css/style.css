@@ -60,12 +60,12 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 .auth-error { color:var(--red); font-size:13px; margin-bottom:10px; min-height:18px; text-align:center; }
 
 /* ─── APP LAYOUT ────────────────────────────────────────── */
-.app { display:flex; height:100vh; flex-direction:row-reverse; }
+.app { display:flex; height:100vh; flex-direction:row; }
 
 /* SERVER BAR */
 .server-bar {
   width:68px; background:var(--bg-sidebar); display:flex; flex-direction:column;
-  align-items:center; padding:12px 0; gap:8px; border-left:1px solid var(--border); z-index:10;
+  align-items:center; padding:12px 0; gap:8px; border-left:1px solid var(--border); z-index:10; flex-shrink:0;
   overflow-y:auto; }
 .server-icon {
   width:46px; height:46px; border-radius:50%; background:var(--bg-card);
@@ -83,7 +83,7 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 /* CHANNEL SIDEBAR */
 .channel-sidebar {
   width:232px; background:var(--bg-channels); display:flex; flex-direction:column;
-  border-left:1px solid var(--border); }
+  border-left:1px solid var(--border); flex-shrink:0; }
 .server-name-bar {
   padding:15px 16px; font-weight:700; font-size:15px; border-bottom:1px solid var(--border);
   display:flex; align-items:center; justify-content:space-between;
