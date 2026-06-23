@@ -384,6 +384,31 @@ app.patch('/api/servers/:id', authMiddleware, (req, res) => {
   res.json({ ok: true, server: s });
 });
 
+
+// ─── DELETE CHANNEL ───────────────────────────────────────────────────────────
+app.delete('/api/servers/:id/channels/:chId', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  s.channels = s.channels.filter(c => c.id !== req.params.chId);
+  delete db.messages[req.params.chId];
+  saveDB();
+  io.to(`server:${s.id}`).emit('channel_deleted', { channelId: req.params.chId, serverId: s.id });
+  res.json({ ok: true });
+});
+
+// ─── CLEAR MESSAGES ───────────────────────────────────────────────────────────
+app.post('/api/servers/:id/clear-messages', authMiddleware, (req, res) => {
+  const s = db.servers[req.params.id];
+  if (!s) return res.json({ ok: false });
+  if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
+    return res.json({ ok: false, msg: 'دسترسی نداری' });
+  s.channels.forEach(ch => { db.messages[ch.id] = []; });
+  saveDB();
+  res.json({ ok: true });
+});
+
 // ─── SOCKET.IO ────────────────────────────────────────────────────────────────
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -575,6 +600,26 @@ io.on('connection', socket => {
     if (cmd === 'stop') io.to(`channel:${channelId}`).emit('bot_stop');
     if (cmd === 'skip') io.to(`channel:${channelId}`).emit('bot_skip');
   });
+
+
+// ─── AUDIO RELAY (fallback when WebRTC fails) ────────────────────────────────
+const audioRooms = {}; // { channelId: { socketId: buffer } }
+
+socket.on('audio_chunk', ({ channelId, chunk }) => {
+  // Relay audio chunk to all others in voice channel
+  socket.to(`voice:${channelId}`).emit('audio_chunk', {
+    from: socket.id,
+    userId: socket.userId,
+    chunk
+  });
+});
+
+socket.on('rtc_state', ({ to, state }) => {
+  // Tell server about connection state for fallback
+  if (state === 'failed' || state === 'disconnected') {
+    io.to(to).emit('use_relay', { from: socket.id });
+  }
+});
 
   // Disconnect
   socket.on('disconnect', () => {
