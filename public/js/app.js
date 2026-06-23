@@ -19,6 +19,36 @@ const THEMES={
   dark:  {accent:'#94a3b8',accent2:'#64748b',bg:'#080808',bgChat:'#111111'},
 };
 
+
+// ─── SOUNDS ───────────────────────────────────────────────────────────────────
+function playJoinSound() {
+  try {
+    const ctx = new AudioContext();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(523, ctx.currentTime);
+    o.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+    o.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+function playLeaveSound() {
+  try {
+    const ctx = new AudioContext();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(784, ctx.currentTime);
+    o.frequency.setValueAtTime(523, ctx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 function switchTab(mode){
   authMode=mode;
@@ -137,13 +167,19 @@ function connectSocket(){
     renderMemberList();
   });
   socket.on('bot_play',({title,url,requestedBy})=>{
-    appendBotMessage(`🎵 داره پخش میشه: **${title}** — درخواست از ${requestedBy}`);
+    const parts=title.split('—');
+    const trackName=parts[0]?.trim()||title;
+    const artistName=parts[1]?.trim()||'';
+    appendBotMessage(`🎵 **${trackName}** — درخواست از ${requestedBy}`, {
+      art: '🎵', title: trackName, artist: artistName, duration: '۳۰ ثانیه پیش‌نمایش'
+    });
     botPlayAudio(url);
   });
   socket.on('bot_stop',()=>{
     if(botAudio){botAudio.pause();botAudio=null;botPlaying=false;}
     appendBotMessage('⏹ موزیک متوقف شد');
   });
+  socket.on('bot_message',({text})=>appendBotMessage(text));
   // WebRTC
   socket.on('voice_user_joined',async({user:u,socketId})=>{
     if(!localStream)return;
@@ -199,20 +235,39 @@ function handleBotCommand(msg){
     }
   }
 }
-function appendBotMessage(text){
+function appendBotMessage(text, embed=null){
   const area=document.getElementById('messagesArea');
   const div=document.createElement('div');
   div.className='msg-group';
+  const ts=`${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
   div.innerHTML=`
     <div class="msg-avatar" style="background:linear-gradient(135deg,#7c6af7,#a855f7)">🎵</div>
     <div class="msg-body">
       <div class="msg-header">
         <span class="msg-uname" style="color:#7c6af7">بات موزیک</span>
-        <span class="msg-time">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</span>
+        <span class="msg-time">${ts}</span>
       </div>
       <div class="msg-text">${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+      ${embed ? `
+      <div class="music-embed-card">
+        <div class="mec-art">${embed.art}</div>
+        <div class="mec-info">
+          <div class="mec-title">${embed.title}</div>
+          <div class="mec-artist">${embed.artist}</div>
+          <div class="mec-duration">${embed.duration||'۳۰ ثانیه پیش‌نمایش'}</div>
+        </div>
+        <div class="mec-controls">
+          <button class="mec-btn" onclick="botTogglePlay()">▶</button>
+        </div>
+      </div>` : ''}
     </div>`;
   area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+
+function botTogglePlay(){
+  if(!botAudio)return;
+  if(botAudio.paused){botAudio.play();document.querySelectorAll('.mec-btn').forEach(b=>b.textContent='⏸');}
+  else{botAudio.pause();document.querySelectorAll('.mec-btn').forEach(b=>b.textContent='▶');}
 }
 function botPlayAudio(url){
   if(botAudio){botAudio.pause();}
@@ -341,6 +396,7 @@ async function joinVoice(channelId){
     startSpeakingDetection();
     socket.emit('join_voice',{channelId});currentVoiceId=channelId;
     showToast('به ویس پیوستی 🎤');
+    playJoinSound();
   }catch(e){
     showToast('دسترسی به میکروفون نبود');
     socket.emit('join_voice',{channelId});currentVoiceId=channelId;
@@ -374,6 +430,7 @@ function leaveVoice(){
   document.getElementById('chatView').classList.remove('hidden');
   socket.emit('join_channel',{channelId:currentChannelId});
   showToast('از ویس خارج شدی');
+  playLeaveSound();
 }
 function toggleVcMic(){
   isMuted=!isMuted;
