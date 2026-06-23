@@ -294,11 +294,21 @@ function connectSocket(){
   socket.on('roles_updated',({serverId,roles})=>{serverRoles[serverId]=roles;});
   // WebRTC - existing users tell new joiner who's there
   socket.on('voice_existing_users',async({users})=>{
+    console.log('existing users in voice:', users.length);
     for(const {user:u,socketId} of users){
       if(!socketId||socketId===socket.id)continue;
       socketUserMap[socketId]=u.id;
-      // New user creates PC and waits for offer from existing
-      newPC(socketId,u.id);
+      const pc=newPC(socketId,u.id);
+      // New user also adds tracks and sends offer
+      if(localStream){
+        localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+        try{
+          const offer=await pc.createOffer({offerToReceiveAudio:true});
+          await pc.setLocalDescription(offer);
+          socket.emit('rtc_offer',{to:socketId,offer});
+          console.log('Sent offer to existing user:', socketId.slice(0,6));
+        }catch(e){console.error('offer to existing error',e);}
+      }
     }
   });
 
@@ -341,6 +351,12 @@ function connectSocket(){
     if(pc&&candidate){try{await pc.addIceCandidate(new RTCIceCandidate(candidate));}catch(e){}}
   });
   socket.on('force_disconnect_voice',()=>{if(currentVoiceId){leaveVoice();showToast('⚡ ادمین تو رو از ویس دیسکانکت کرد');}});
+
+  // Audio relay from server
+  socket.on('audio_chunk',({from,userId,chunk,sampleRate})=>{
+    if(userId===me?.id||isDeafened)return;
+    playRelayedAudio(userId,new Int16Array(chunk),sampleRate||24000);
+  });
   socket.on('server_updated',({serverId,name,icon,iconUrl})=>{
     const srv=myServers.find(s=>s.id===serverId);
     if(srv){srv.name=name;srv.icon=icon;srv.iconUrl=iconUrl;renderServerBar();}
@@ -353,55 +369,119 @@ function connectSocket(){
 }
 
 // ─── WEBRTC ───────────────────────────────────────────────────────────────────
-function newPC(sid,uid){
-  const pc=new RTCPeerConnection({
-    iceServers:[
-      {urls:'stun:stun.l.google.com:19302'},
-      {urls:'stun:stun1.l.google.com:19302'},
-      {urls:'stun:stun2.l.google.com:19302'},
-      {urls:'stun:stun3.l.google.com:19302'},
-      {urls:'stun:stun4.l.google.com:19302'},
-      // Metered TURN - رایگان و سریع
-      {urls:'turn:a.relay.metered.ca:80',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
-      {urls:'turn:a.relay.metered.ca:80?transport=tcp',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
-      {urls:'turn:a.relay.metered.ca:443',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
-      {urls:'turn:a.relay.metered.ca:443?transport=tcp',username:'83e843ab49d7571fea6c3c32',credential:'T9bnCHFJUFiQbvPZ'},
-    ],
-    iceCandidatePoolSize:10,
-    bundlePolicy:'max-bundle',
-    rtcpMuxPolicy:'require',
-  });
-  peerConnections[sid]=pc;
-  if(uid)socketUserMap[sid]=uid;
-  pc.onicecandidate=e=>{if(e.candidate)socket.emit('rtc_candidate',{to:sid,candidate:e.candidate});};
-  pc.ontrack=e=>{
-    if(peerAudios[sid]){peerAudios[sid].pause();peerAudios[sid].remove();}
-    const audio=document.createElement('audio');
-    audio.autoplay=true;
-    audio.srcObject=e.streams[0];
-    audio.volume=1;
-    const u=socketUserMap[sid];
-    if(u){
-      audio.dataset.userId=u;
-      audio.volume=localMutes[u]?0:(localVolumes[u]??1);
-    }
-    // Set speaker device if selected
-    const spk=localStorage.getItem('mahfel_speaker');
-    if(spk&&audio.setSinkId){
-      audio.setSinkId(spk).catch(()=>{});
-    }
-    document.body.appendChild(audio);
-    peerAudios[sid]=audio;
-    // Force play
-    const playPromise=audio.play();
-    if(playPromise){
-      playPromise.catch(e=>{
-        // Retry on user interaction
-        document.addEventListener('click',()=>audio.play().catch(()=>{}),{once:true});
-      });
-    }
+// ─── SOCKET.IO AUDIO SYSTEM (no WebRTC) ──────────────────────────────────────
+let audioCtxRelay = null;
+let audioSender = null;
+let audioReceivers = {}; // { userId: AudioContext }
+const SAMPLE_RATE = 24000;
+const BUFFER_SIZE = 2048;
+
+function newPC(sid, uid) {
+  // Stub - kept for compatibility but not used
+  socketUserMap[sid] = uid;
+  return { 
+    addTrack:()=>{}, 
+    createOffer:()=>Promise.resolve({}),
+    createAnswer:()=>Promise.resolve({}),
+    setLocalDescription:()=>Promise.resolve(),
+    setRemoteDescription:()=>Promise.resolve(),
+    addIceCandidate:()=>Promise.resolve(),
+    close:()=>{},
+    getSenders:()=>[],
+    connectionState:'connected',
+    iceConnectionState:'connected',
+    signalingState:'stable',
+    restartIce:()=>{},
+    onicecandidate:null,
+    ontrack:null,
+    onconnectionstatechange:null,
+    oniceconnectionstatechange:null,
   };
-  return pc;
+}
+
+function startAudioRelay() {
+  if (!localStream) return;
+  stopAudioRelay();
+  try {
+    audioCtxRelay = new AudioContext({ sampleRate: SAMPLE_RATE });
+    const src = audioCtxRelay.createMediaStreamSource(localStream);
+    const processor = audioCtxRelay.createScriptProcessor(1024, 1, 1);
+    src.connect(processor);
+    processor.connect(audioCtxRelay.destination);
+    
+    processor.onaudioprocess = (e) => {
+      if (!currentVoiceId || isMuted || !socket.connected) return;
+      const input = e.inputBuffer.getChannelData(0);
+      
+      // RMS check - only send if there is actual sound
+      let sum = 0;
+      for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+      const rms = Math.sqrt(sum / input.length);
+      if (rms < 0.003) return;
+      
+      const int16 = new Int16Array(input.length);
+      for (let i = 0; i < input.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, input[i] * 32767));
+      }
+      socket.emit('audio_chunk', {
+        channelId: currentVoiceId,
+        chunk: Array.from(int16),
+        sampleRate: SAMPLE_RATE
+      });
+    };
+    
+    audioSender = processor;
+    console.log('✅ Audio relay started, sampleRate:', SAMPLE_RATE);
+  } catch(e) {
+    console.error('Audio relay error:', e);
+    showToast('خطا در شروع صدا: ' + e.message);
+  }
+}
+
+function stopAudioRelay() {
+  if (audioSender) { audioSender.disconnect(); audioSender = null; }
+  if (audioCtxRelay) { audioCtxRelay.close(); audioCtxRelay = null; }
+}
+
+// Audio queue per user for smooth playback
+const audioQueues = {};
+const nextPlayTime = {};
+
+function playRelayedAudio(userId, int16Data, sampleRate) {
+  if (isDeafened) return;
+  const vol = localMutes[userId] ? 0 : (localVolumes[userId] ?? 1);
+  
+  try {
+    if (!audioReceivers[userId]) {
+      audioReceivers[userId] = new AudioContext({ sampleRate: sampleRate || SAMPLE_RATE });
+      nextPlayTime[userId] = 0;
+    }
+    const ctx = audioReceivers[userId];
+    if (ctx.state === 'suspended') ctx.resume();
+    
+    const buf = ctx.createBuffer(1, int16Data.length, sampleRate || SAMPLE_RATE);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < int16Data.length; i++) {
+      data[i] = int16Data[i] / 32767;
+    }
+    
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    gain.gain.value = vol;
+    src.buffer = buf;
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    
+    // Schedule for smooth playback
+    const now = ctx.currentTime;
+    if (!nextPlayTime[userId] || nextPlayTime[userId] < now) {
+      nextPlayTime[userId] = now + 0.05;
+    }
+    src.start(nextPlayTime[userId]);
+    nextPlayTime[userId] += buf.duration;
+  } catch(e) {
+    console.error('playRelayedAudio error:', e);
+  }
 }
 
 // ─── VOICE ────────────────────────────────────────────────────────────────────
@@ -410,25 +490,33 @@ async function joinVoice(channelId){
   if(savedMic) selectedMicId=savedMic;
   
   try{
-    const audioConstraints=getAudioConstraints();
-    console.log('Getting mic with constraints:', audioConstraints);
-    localStream=await navigator.mediaDevices.getUserMedia({audio:audioConstraints});
-    console.log('Got local stream, tracks:', localStream.getAudioTracks().length);
+    const nc=localStorage.getItem('mahfel_nc')!=='0';
+    const ag=localStorage.getItem('mahfel_ag')!=='0';
+    const ec=localStorage.getItem('mahfel_ec')!=='0';
+    const micId=localStorage.getItem('mahfel_mic')||'';
+    const audioOpts={
+      echoCancellation:ec,
+      noiseSuppression:nc,
+      autoGainControl:ag,
+      sampleRate:24000,
+    };
+    if(micId) audioOpts.deviceId={ideal:micId};
+    localStream=await navigator.mediaDevices.getUserMedia({audio:audioOpts});
+    console.log('✅ Got mic');
     startSpeakDetect();
+    startAudioRelay();
     socket.emit('join_voice',{channelId});
     currentVoiceId=channelId;
     playTone([523,659,784]);
     showToast('🎤 به ویس پیوستی');
   }catch(e){
     console.error('Mic error:', e);
-    // Try without constraints
     try{
       localStream=await navigator.mediaDevices.getUserMedia({audio:true});
-      console.log('Got stream with basic constraints');
       startSpeakDetect();
+      startAudioRelay();
     }catch(e2){
-      console.error('No mic at all:', e2);
-      showToast('⚠️ میکروفون پیدا نشد — فقط میشنوی');
+      showToast('⚠️ میکروفون پیدا نشد');
     }
     socket.emit('join_voice',{channelId});
     currentVoiceId=channelId;
@@ -453,9 +541,13 @@ function startSpeakDetect(){
 }
 function leaveVoice(){
   if(currentVoiceId)socket.emit('leave_voice',{channelId:currentVoiceId});
+  stopAudioRelay();
   clearInterval(speakTimer);if(audioCtx){audioCtx.close();audioCtx=null;analyser=null;}
-  Object.values(peerConnections).forEach(pc=>pc.close());peerConnections={};
-  Object.values(peerAudios).forEach(a=>{a.pause();a.remove();});peerAudios={};
+  // Close audio receivers
+  Object.values(audioReceivers).forEach(ctx=>{try{ctx.close();}catch(e){}});
+  Object.keys(audioReceivers).forEach(k=>delete audioReceivers[k]);
+  Object.values(peerConnections).forEach(pc=>{try{pc.close();}catch(e){}});peerConnections={};
+  Object.values(peerAudios).forEach(a=>{try{a.pause();a.remove();}catch(e){}});peerAudios={};
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   currentVoiceId=null;
   $('voiceView').classList.add('hidden');$('chatView').classList.remove('hidden');
@@ -931,10 +1023,22 @@ function appendMessage(msg,noScroll=false){
   const t=new Date(msg.time);const ts=`${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
   const av=msg.avatarUrl?`<img src="${msg.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span>${msg.avatar}</span>`;
   const div=document.createElement('div');div.className='msg-group';
+  const roleTag=(() => {
+    const srv=myServers.find(s=>s.id===currentServerId);
+    if(!srv)return'';
+    const member=serverMembers[currentServerId]?.find(m=>m.id===msg.userId);
+    if(!member)return'';
+    const roles=(serverRoles[currentServerId]||[]).filter(r=>member.roles?.includes(r.id));
+    return roles.map(r=>`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${r.color}22;color:${r.color};border:1px solid ${r.color}44;margin-right:4px">${r.name}</span>`).join('');
+  })();
   div.innerHTML=`
     <div class="msg-avatar" style="background:linear-gradient(135deg,${msg.color},${msg.color}cc)">${av}</div>
     <div class="msg-body">
-      <div class="msg-header"><span class="msg-uname" style="color:${msg.color}">${msg.username}</span><span class="msg-time">${ts}</span></div>
+      <div class="msg-header">
+        <span class="msg-uname" style="color:${msg.color}">${msg.username}</span>
+        ${roleTag}
+        <span class="msg-time">${ts}</span>
+      </div>
       <div class="msg-text">${esc(msg.text)}</div>
     </div>`;
   a.appendChild(div);if(!noScroll)a.scrollTop=a.scrollHeight;
@@ -1024,7 +1128,9 @@ function openModal(id){
   // Per-modal init
   if(id==='musicModal') renderTracks();
   if(id==='profileModal'){ buildThemePicker(); buildBgSelector(); }
-  if(id==='serverSettingsModal'){ loadServerRoles(currentServerId); }
+  if(id==='serverSettingsModal'){ 
+    // handled by openServerSettings()
+  }
   if(id==='audioSettingsModal'){ loadAudioDevices(); }
   if(id==='soundboardModal'){ renderSoundboard(); }
 }
@@ -1039,11 +1145,30 @@ function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('sh
 
 // ─── INVITE ───────────────────────────────────────────────────────────────────
 const invId=new URLSearchParams(location.search).get('join');
-if(invId){window.addEventListener('load',()=>setTimeout(async()=>{
-  if(!token)return;
-  const d=await api(`/api/servers/${invId}/join`,'POST');
-  if(d.ok){if(!myServers.find(s=>s.id===d.server.id))myServers.push(d.server);renderServerBar();selectServer(d.server.id);showToast('پیوستی! 🎉');history.replaceState({},'','/');}
-},1500));}
+if(invId){
+  // Show invite banner on auth page
+  const banner=document.getElementById('inviteBanner');
+  if(banner){
+    banner.textContent='🔗 دعوت به سرور — لاگین کن تا بپیوندی';
+    banner.classList.remove('hidden');
+  }
+  // After login, auto-join
+  window.addEventListener('load',()=>setTimeout(async()=>{
+    if(!token)return;
+    try{
+      const d=await api(`/api/servers/${invId}/join`,'POST');
+      if(d.ok){
+        if(!myServers.find(s=>s.id===d.server.id))myServers.push(d.server);
+        renderServerBar();
+        selectServer(d.server.id);
+        showToast('به سرور پیوستی! 🎉');
+        history.replaceState({},'','/');
+      }else{
+        showToast(d.msg||'خطا در پیوستن');
+      }
+    }catch(e){}
+  },2000));
+}
 
 // ─── MOBILE ───────────────────────────────────────────────────────────────────
 function toggleChannelSidebar(){
@@ -1466,4 +1591,108 @@ function checkVoiceDebug(){
   const msg=lines.join('\n');
   alert(msg);
   console.log('VOICE DEBUG:\n'+msg);
+}
+
+// ─── SERVER SETTINGS PANEL ────────────────────────────────────────────────────
+async function openServerSettings(){
+  const srv=myServers.find(s=>s.id===currentServerId);
+  if(!srv)return;
+  setText('srvSettingsName',srv.name);
+  await loadServerRoles(currentServerId);
+  // Load stats
+  const members=serverMembers[currentServerId]||[];
+  const online=members.filter(m=>!!onlineUsers[m.id]).length;
+  const srv2=myServers.find(s=>s.id===currentServerId);
+  const chCount=srv2?.channels?.length||0;
+  $('srvStats').innerHTML=`
+    <div class="srv-stat-card"><div class="srv-stat-num">${members.length}</div><div class="srv-stat-label">👥 عضو</div></div>
+    <div class="srv-stat-card"><div class="srv-stat-num" style="color:#00ff88">${online}</div><div class="srv-stat-label">🟢 آنلاین</div></div>
+    <div class="srv-stat-card"><div class="srv-stat-num">${chCount}</div><div class="srv-stat-label">📢 کانال</div></div>`;
+  // Load invite link
+  $('serverInviteLinkDisplay').textContent=`${location.origin}?join=${currentServerId}`;
+  // Load channels list
+  renderSettingsChannels();
+  // Load members list
+  renderSettingsMembers('');
+  openModal('serverSettingsModal');
+  switchStab(document.querySelector('#serverSettingsModal .stab'),'overview');
+}
+
+function renderSettingsMembers(filter){
+  const members=(serverMembers[currentServerId]||[]).filter(m=>
+    !filter||m.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+  const list=$('srvMembersList');if(!list)return;
+  const canMod=['owner','admin'].includes(myServerRole);
+  list.innerHTML=members.map(m=>{
+    const isOnline=!!onlineUsers[m.id];
+    const ri=m.serverRole==='owner'?'👑':m.serverRole==='admin'?'🛡':m.serverRole==='mod'?'🔨':'👤';
+    const customRoles=(serverRoles[currentServerId]||[]).filter(r=>m.roles?.includes(r.id));
+    const av=m.avatarUrl?`<img src="${m.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span>${m.avatar||m.username?.[0]?.toUpperCase()}</span>`;
+    return `<div class="srv-member-row">
+      <div class="ml-avatar ${isOnline?'online':''}" style="background:${m.color}">${av}</div>
+      <div class="member-info">
+        <div class="member-name">${m.username} ${ri}</div>
+        <div class="member-role">${customRoles.map(r=>`<span style="color:${r.color}">${r.name}</span>`).join(' • ')||m.serverRole}</div>
+      </div>
+      ${canMod&&m.id!==me?.id?`<button class="auth-btn sm" onclick="openUserMenu('${m.id}','${m.username}','${m.serverRole||'member'}','${m.color}')" style="font-size:12px">مدیریت</button>`:''}
+    </div>`;
+  }).join('')||'<div style="color:var(--muted);text-align:center;padding:20px">عضوی پیدا نشد</div>';
+}
+
+function filterMembers(val){ renderSettingsMembers(val); }
+
+function renderSettingsChannels(){
+  const srv=myServers.find(s=>s.id===currentServerId);
+  const list=$('srvChannelsList');if(!list||!srv)return;
+  list.innerHTML=srv.channels.map(ch=>`
+    <div class="srv-ch-row">
+      <span style="font-size:16px">${ch.type==='voice'?'🔊':'＃'}</span>
+      <div style="flex:1;font-size:14px">${ch.name}</div>
+      <span style="font-size:11px;color:var(--muted)">${ch.type==='voice'?'ویس':'متن'}</span>
+      ${['owner','admin'].includes(myServerRole)?`<button class="danger-btn" style="padding:4px 10px;font-size:12px" onclick="deleteChannel('${ch.id}','${ch.name}')">حذف</button>`:''}
+    </div>`).join('');
+}
+
+async function addChannelFromSettings(){
+  const name=$('newChNameSrv').value.trim();
+  const type=$('newChTypeSrv').value;
+  if(!name){showToast('اسم کانال الزامیه');return;}
+  const d=await api(`/api/servers/${currentServerId}/channels`,'POST',{name,type});
+  if(d.ok){
+    $('newChNameSrv').value='';
+    showToast('کانال ساخته شد ✅');
+    // Update local server data
+    const srv=myServers.find(s=>s.id===currentServerId);
+    if(srv&&d.channel)srv.channels.push(d.channel);
+    renderSettingsChannels();
+    renderChannels();
+  }
+}
+
+async function deleteChannel(chId,chName){
+  if(!confirm(`کانال "${chName}" حذف بشه؟`))return;
+  const d=await api(`/api/servers/${currentServerId}/channels/${chId}`,'DELETE');
+  if(d.ok){
+    const srv=myServers.find(s=>s.id===currentServerId);
+    if(srv)srv.channels=srv.channels.filter(c=>c.id!==chId);
+    renderSettingsChannels();renderChannels();
+    showToast('کانال حذف شد');
+  }else showToast(d.msg||'خطا');
+}
+
+async function clearServerMessages(){
+  if(!confirm('همه پیام‌های سرور پاک بشن؟'))return;
+  const d=await api(`/api/servers/${currentServerId}/clear-messages`,'POST');
+  if(d.ok){$('messagesArea').innerHTML='';showToast('پیام‌ها پاک شدن');}
+}
+
+function shareInvite(){
+  const link=`${location.origin}?join=${currentServerId}`;
+  if(navigator.share){
+    navigator.share({title:'محفل',text:'بیا توی سرور من!',url:link});
+  }else{
+    navigator.clipboard.writeText(link);
+    showToast('لینک کپی شد ✅');
+  }
 }

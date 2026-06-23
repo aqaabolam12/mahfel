@@ -20,7 +20,7 @@
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--text);height:100vh;overflow:hidden;
+body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--text);height:100vh;overflow:hidden;direction:rtl;
   background-image:radial-gradient(ellipse at 15% 50%,rgba(124,106,247,0.06) 0%,transparent 50%),
                    radial-gradient(ellipse at 85% 20%,rgba(168,85,247,0.04) 0%,transparent 50%);}
 .hidden{display:none!important;}
@@ -49,11 +49,11 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
 .auth-error{color:var(--red);font-size:13px;margin-bottom:10px;min-height:18px;text-align:center;}
 
 /* ── APP LAYOUT ───────────────────────────────────────────── */
-.app{display:grid;grid-template-columns:68px 232px 1fr auto;height:100vh;}
+.app{display:grid;grid-template-columns:68px 232px 1fr;height:100vh;}
 
 /* ── SERVER BAR ───────────────────────────────────────────── */
 .server-bar{background:var(--bg-side);display:flex;flex-direction:column;align-items:center;
-  padding:12px 0;gap:8px;border-left:1px solid var(--border);z-index:10;overflow-y:auto;}
+  padding:12px 0;gap:8px;border-right:1px solid var(--border);z-index:10;overflow-y:auto;direction:ltr;}
 .server-icon{width:46px;height:46px;border-radius:50%;background:var(--bg-card);
   display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;
   transition:all .2s;border:2px solid transparent;flex-shrink:0;position:relative;}
@@ -65,7 +65,7 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
 .server-sep{width:30px;height:1px;background:var(--border);}
 
 /* ── CHANNEL SIDEBAR ──────────────────────────────────────── */
-.channel-sidebar{background:var(--bg-ch);display:flex;flex-direction:column;border-left:1px solid var(--border);}
+.channel-sidebar{background:var(--bg-ch);display:flex;flex-direction:column;border-right:1px solid var(--border);}
 .server-name-bar{padding:16px;display:flex;align-items:center;justify-content:space-between;
   border-bottom:1px solid var(--border);min-height:56px;}
 .srv-title{font-weight:700;font-size:15px;}
@@ -540,3 +540,35 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
   cursor:pointer; transition:.15s;
 }
 .roles-list .role-item .role-edit-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ─── INVITE BANNER ──────────────────────────────────────── */
+.invite-banner {
+  background:rgba(124,106,247,.15); border:1px solid var(--accent);
+  border-radius:10px; padding:10px 16px; text-align:center;
+  font-size:13px; color:var(--accent); margin-bottom:12px;
+}
+
+/* ─── SERVER SETTINGS PANEL ──────────────────────────────── */
+.srv-stats-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;
+}
+.srv-stat-card {
+  background:var(--bg-input); border:1px solid var(--border); border-radius:10px;
+  padding:12px; text-align:center;
+}
+.srv-stat-num { font-size:22px; font-weight:700; color:var(--accent); }
+.srv-stat-label { font-size:11px; color:var(--muted); margin-top:2px; }
+.srv-member-row {
+  display:flex; align-items:center; gap:10px; padding:10px;
+  background:var(--bg-input); border:1px solid var(--border);
+  border-radius:10px; margin-bottom:6px;
+}
+.srv-member-row .ml-avatar { width:36px; height:36px; flex-shrink:0; }
+.srv-member-row .member-info { flex:1; min-width:0; }
+.srv-member-row .member-name { font-size:14px; font-weight:600; }
+.srv-member-row .member-role { font-size:11px; color:var(--muted); }
+.srv-ch-row {
+  display:flex; align-items:center; gap:10px; padding:10px;
+  background:var(--bg-input); border:1px solid var(--border);
+  border-radius:10px; margin-bottom:6px;
+}

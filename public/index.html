@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,10 +17,11 @@
 <div id="energyWaves" class="hidden"><div class="energy-wave"></div><div class="energy-wave"></div></div>
 
 <!-- ═══ AUTH ═══ -->
-<div id="authScreen" class="auth-screen">
+<div id="authScreen" class="auth-screen" dir="rtl">
   <div class="auth-card">
     <div class="auth-logo"><img src="/icon.png" style="width:72px;height:72px;border-radius:50%" onerror="this.outerHTML='🌙'"></div>
     <div class="auth-title">محفل</div>
+    <div id="inviteBanner" class="invite-banner hidden"></div>
     <div class="auth-sub">جایی برای دوستات</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">ورود</button>
@@ -39,7 +40,7 @@
 
 <!-- ═══ APP ═══ -->
 <div class="mob-overlay" id="mobOverlay" onclick="closeMobileSidebars()"></div>
-<div id="app" class="app hidden">
+<div id="app" class="app hidden" dir="ltr">
 
   <!-- SERVER BAR -->
   <div class="server-bar">
@@ -126,7 +127,7 @@
 <!-- ═══ MODALS ═══ -->
 
 <!-- Profile -->
-<div class="modal-overlay hidden" id="profileModal">
+<div class="modal-overlay hidden" id="profileModal" dir="rtl">
   <div class="modal">
     <div class="m-title">👤 پروفایل من</div>
 
@@ -168,71 +169,120 @@
 
 <!-- Server Settings -->
 <div class="modal-overlay hidden" id="serverSettingsModal">
-  <div class="modal wide">
-    <div class="m-title">⚙ تنظیمات سرور</div>
-    <div class="settings-tabs">
-      <button class="stab active" data-tab="roles" onclick="switchStab(this,'roles')">🎭 رول‌ها</button>
-      <button class="stab" data-tab="profile" onclick="switchStab(this,'profile')">🖼 پروفایل سرور</button>
-      <button class="stab" data-tab="invite" onclick="switchStab(this,'invite')">🔗 دعوت</button>
-      <button class="stab" data-tab="manage" onclick="switchStab(this,'manage')">⚙ مدیریت</button>
-    </div>
-
-    <!-- Roles Tab -->
-    <div id="stab-roles" class="stab-content">
-      <div class="role-create">
-        <input id="newRoleName" class="auth-input" placeholder="اسم رول مثلاً: VIP" style="margin:0;flex:1">
-        <input id="newRoleColor" type="color" value="#7c6af7" class="color-pick" title="رنگ رول">
-        <button class="auth-btn sm" onclick="createRole()">＋ بساز</button>
-      </div>
-      <div id="rolesList" class="roles-list"></div>
-    </div>
-
-    <!-- Role Edit Modal (inline) -->
-    <div id="roleEditPanel" class="role-edit-panel hidden">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <button class="icon-btn" onclick="closeRoleEdit()">←</button>
-        <div id="roleEditTitle" style="font-size:16px;font-weight:700">ویرایش رول</div>
-      </div>
-      <input id="roleEditName" class="auth-input" placeholder="اسم رول">
-      <input id="roleEditColor" type="color" class="color-pick" style="width:60px;height:44px;margin-bottom:16px">
-      <div class="section-label">🔐 قوانین و دسترسی‌ها</div>
-      <div class="perms-list">
-        <label class="perm-item"><input type="checkbox" value="send_messages"> 💬 ارسال پیام</label>
-        <label class="perm-item"><input type="checkbox" value="join_voice"> 🎤 پیوستن به ویس</label>
-        <label class="perm-item"><input type="checkbox" value="speak_voice"> 🔊 صحبت در ویس</label>
-        <label class="perm-item"><input type="checkbox" value="manage_messages"> ✏️ مدیریت پیام‌ها</label>
-        <label class="perm-item"><input type="checkbox" value="kick_members"> 🚪 کیک کاربران</label>
-        <label class="perm-item"><input type="checkbox" value="ban_members"> 🔨 بن کاربران</label>
-        <label class="perm-item"><input type="checkbox" value="manage_channels"> 📢 مدیریت کانال‌ها</label>
-        <label class="perm-item"><input type="checkbox" value="manage_roles"> 🎭 مدیریت رول‌ها</label>
-        <label class="perm-item"><input type="checkbox" value="use_soundboard"> 🎛 استفاده از ساندبورد</label>
-        <label class="perm-item"><input type="checkbox" value="move_members"> 📡 انتقال کاربران</label>
-      </div>
-      <input type="hidden" id="roleEditId">
-      <div class="m-actions">
-        <button class="auth-btn" onclick="saveRoleEdit()">💾 ذخیره</button>
-        <button class="m-cancel" onclick="closeRoleEdit()">لغو</button>
+  <div class="modal wide" style="max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    
+    <!-- Header -->
+    <div style="padding:20px 24px 0;flex-shrink:0">
+      <div class="m-title" style="margin-bottom:12px">⚙ تنظیمات سرور — <span id="srvSettingsName" style="color:var(--accent)"></span></div>
+      <div class="settings-tabs" style="overflow-x:auto;flex-wrap:nowrap;white-space:nowrap">
+        <button class="stab active" onclick="switchStab(this,'overview')">📋 کلی</button>
+        <button class="stab" onclick="switchStab(this,'roles')">🎭 رول‌ها</button>
+        <button class="stab" onclick="switchStab(this,'members')">👥 اعضا</button>
+        <button class="stab" onclick="switchStab(this,'channels')">📢 کانال‌ها</button>
+        <button class="stab" onclick="switchStab(this,'invite')">🔗 دعوت</button>
+        <button class="stab" onclick="switchStab(this,'danger')">⚠️ خطر</button>
       </div>
     </div>
 
-    <!-- Server Profile Tab -->
-    <div id="stab-profile" class="stab-content hidden">
-      <div class="section-label">نام‌مستعار در این سرور (اختیاری)</div>
-      <input id="serverNickname" class="auth-input" placeholder="نام‌مستعار">
-      <div class="section-label">رنگ آواتار در این سرور</div>
-      <input id="serverAvatarColor" type="color" value="#7c6af7" class="color-pick" style="width:60px;height:44px">
-      <div class="m-actions" style="margin-top:16px">
-        <button class="auth-btn" onclick="saveServerProfile()">💾 ذخیره</button>
+    <!-- Content -->
+    <div style="padding:16px 24px 20px;overflow-y:auto;flex:1;position:relative">
+
+      <!-- Overview Tab -->
+      <div id="stab-overview" class="stab-content">
+        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
+          <div id="srvIconPreview" class="new-srv-icon" style="width:72px;height:72px;flex-shrink:0" onclick="document.getElementById('srvIconFile').click()">🌟</div>
+          <input id="srvIconFile" type="file" accept="image/*" style="display:none" onchange="uploadServerIcon(event)">
+          <div style="flex:1">
+            <div class="section-label">اسم سرور</div>
+            <input id="editServerName" class="auth-input" placeholder="اسم سرور" style="margin-bottom:8px">
+            <button class="auth-btn" onclick="saveServerInfo()" style="width:100%">💾 ذخیره</button>
+          </div>
+        </div>
+        <div class="section-label">آمار سرور</div>
+        <div id="srvStats" class="srv-stats-grid"></div>
       </div>
-    </div>
 
-    <!-- Invite Tab -->
-    <div id="stab-invite" class="stab-content hidden">
-      <div class="section-label">لینک دعوت:</div>
-      <div id="serverInviteLinkDisplay" class="invite-box">—</div>
-      <button class="auth-btn sm" onclick="copyCurrentInvite()">📋 کپی لینک</button>
-    </div>
+      <!-- Roles Tab -->
+      <div id="stab-roles" class="stab-content hidden">
+        <div class="role-create">
+          <input id="newRoleName" class="auth-input" placeholder="اسم رول مثلاً: VIP" style="margin:0;flex:1">
+          <input id="newRoleColor" type="color" value="#7c6af7" class="color-pick">
+          <button class="auth-btn sm" onclick="createRole()">＋ بساز</button>
+        </div>
+        <div id="rolesList" class="roles-list"></div>
+        <!-- Role Edit Panel -->
+        <div id="roleEditPanel" class="role-edit-panel hidden">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <button class="icon-btn" onclick="closeRoleEdit()">←</button>
+            <div id="roleEditTitle" style="font-size:16px;font-weight:700">ویرایش رول</div>
+          </div>
+          <input id="roleEditName" class="auth-input" placeholder="اسم رول">
+          <input id="roleEditColor" type="color" class="color-pick" style="width:60px;height:44px;margin-bottom:16px">
+          <div class="section-label">🔐 دسترسی‌ها</div>
+          <div class="perms-list">
+            <label class="perm-item"><input type="checkbox" value="send_messages"> 💬 ارسال پیام</label>
+            <label class="perm-item"><input type="checkbox" value="join_voice"> 🎤 پیوستن به ویس</label>
+            <label class="perm-item"><input type="checkbox" value="speak_voice"> 🔊 صحبت در ویس</label>
+            <label class="perm-item"><input type="checkbox" value="manage_messages"> ✏️ مدیریت پیام‌ها</label>
+            <label class="perm-item"><input type="checkbox" value="kick_members"> 🚪 کیک کاربران</label>
+            <label class="perm-item"><input type="checkbox" value="ban_members"> 🔨 بن کاربران</label>
+            <label class="perm-item"><input type="checkbox" value="manage_channels"> 📢 مدیریت کانال‌ها</label>
+            <label class="perm-item"><input type="checkbox" value="manage_roles"> 🎭 مدیریت رول‌ها</label>
+            <label class="perm-item"><input type="checkbox" value="use_soundboard"> 🎛 ساندبورد</label>
+            <label class="perm-item"><input type="checkbox" value="move_members"> 📡 انتقال کاربران</label>
+          </div>
+          <input type="hidden" id="roleEditId">
+          <div class="m-actions">
+            <button class="auth-btn" onclick="saveRoleEdit()">💾 ذخیره</button>
+            <button class="m-cancel" onclick="closeRoleEdit()">لغو</button>
+          </div>
+        </div>
+      </div>
 
+      <!-- Members Tab -->
+      <div id="stab-members" class="stab-content hidden">
+        <input id="memberSearch" class="auth-input" placeholder="🔍 جستجوی عضو..." oninput="filterMembers(this.value)" style="margin-bottom:12px">
+        <div id="srvMembersList" class="roles-list"></div>
+      </div>
+
+      <!-- Channels Tab -->
+      <div id="stab-channels" class="stab-content hidden">
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input id="newChNameSrv" class="auth-input" placeholder="اسم کانال جدید" style="margin:0;flex:1">
+          <select id="newChTypeSrv" class="auth-input" style="margin:0;width:100px">
+            <option value="text">💬 متن</option>
+            <option value="voice">🔊 ویس</option>
+          </select>
+          <button class="auth-btn sm" onclick="addChannelFromSettings()">＋</button>
+        </div>
+        <div id="srvChannelsList" class="roles-list"></div>
+      </div>
+
+      <!-- Invite Tab -->
+      <div id="stab-invite" class="stab-content hidden">
+        <div class="section-label">لینک دعوت به سرور</div>
+        <div id="serverInviteLinkDisplay" class="invite-box">—</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="auth-btn" onclick="copyCurrentInvite()" style="flex:1">📋 کپی لینک</button>
+          <button class="auth-btn sm" onclick="shareInvite()" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text)">📤 اشتراک</button>
+        </div>
+        <div class="section-label" style="margin-top:16px">لینک را برای دوستانت بفرست</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8">
+          دوستت لینک رو باز میکنه ← لاگین میکنه ← خودکار به سرور میپیونده
+        </div>
+      </div>
+
+      <!-- Danger Tab -->
+      <div id="stab-danger" class="stab-content hidden">
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ منطقه خطر</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">این عملیات‌ها برگشت‌ناپذیر هستند</div>
+          <button class="danger-btn" onclick="deleteServer()" style="width:100%;margin-bottom:8px">🗑 حذف کامل سرور</button>
+          <button class="danger-btn" style="width:100%;background:rgba(239,68,68,.05)" onclick="clearServerMessages()">🧹 پاک کردن همه پیام‌ها</button>
+        </div>
+      </div>
+
+    </div>
     <button class="m-close" onclick="closeModal('serverSettingsModal')">✕</button>
   </div>
 </div>
