@@ -60,13 +60,13 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 .auth-error { color:var(--red); font-size:13px; margin-bottom:10px; min-height:18px; text-align:center; }
 
 /* ─── APP LAYOUT ────────────────────────────────────────── */
-.app { display:flex; height:100vh; }
+.app { display:flex; height:100vh; direction:ltr; }
 
 /* SERVER BAR */
 .server-bar {
   width:68px; background:var(--bg-sidebar); display:flex; flex-direction:column;
   align-items:center; padding:12px 0; gap:8px; border-left:1px solid var(--border); z-index:10;
-  overflow-y:auto;
+  overflow-y:auto; order:3;
 }
 .server-icon {
   width:46px; height:46px; border-radius:50%; background:var(--bg-card);
@@ -84,7 +84,7 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 /* CHANNEL SIDEBAR */
 .channel-sidebar {
   width:232px; background:var(--bg-channels); display:flex; flex-direction:column;
-  border-left:1px solid var(--border);
+  border-left:1px solid var(--border); order:2; direction:rtl;
 }
 .server-name-bar {
   padding:15px 16px; font-weight:700; font-size:15px; border-bottom:1px solid var(--border);
@@ -142,7 +142,7 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 .icon-btn:hover { background:var(--bg-hover); color:var(--text-main); }
 
 /* MAIN CONTENT */
-.main-content { flex:1; display:flex; flex-direction:column; min-width:0; }
+.main-content { flex:1; display:flex; flex-direction:column; min-width:0; order:1; direction:rtl; }
 .chat-header {
   height:54px; background:var(--bg-chat); border-bottom:1px solid var(--border);
   display:flex; align-items:center; padding:0 20px; gap:10px; flex-shrink:0;
@@ -243,8 +243,8 @@ body { font-family:'Vazirmatn',sans-serif; background:var(--bg-deep); color:var(
 
 /* MEMBER LIST */
 .member-list {
-  width:220px; background:var(--bg-channels); border-left:1px solid var(--border);
-  padding:16px 12px; overflow-y:auto;
+  width:220px; background:var(--bg-channels); border-right:1px solid var(--border);
+  padding:16px 12px; overflow-y:auto; order:0; direction:rtl;
 }
 .ml-title { font-size:12px; font-weight:700; color:var(--text-muted); letter-spacing:1px; margin-bottom:12px; }
 .ml-user { display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:6px; margin-bottom:4px; cursor:pointer; }
