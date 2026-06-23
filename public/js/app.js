@@ -91,7 +91,7 @@ function startApp(){
   applyBgEffect(localStorage.getItem('gaphub_bg')||'none');
   connectSocket();updateMyUI();loadServers();
   setTimeout(startPingMonitor, 3000);
-  setTimeout(registerScreenShareEvents, 1000);
+
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -368,6 +368,46 @@ function connectSocket(){
   socket.on('server_deleted',({serverId})=>{
     myServers=myServers.filter(s=>s.id!==serverId);renderServerBar();
     if(currentServerId===serverId)selectServer('default');
+  });
+
+  // Screen share signaling
+  socket.on('screen_share_started',async({userId,username,socketId})=>{
+    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده`);
+    setText('ssUsername',`🖥 ${username}`);
+    $('screenShareArea')?.classList.remove('hidden');
+    $('vcScreenGrid')?.classList.remove('hidden');
+    $('voiceView')?.classList.add('has-share');
+    // Create PC to receive
+    const pc=await createScreenPC(socketId,false);
+    socket.emit('screen_request',{to:socketId});
+  });
+  socket.on('screen_share_stopped',()=>{
+    $('vcScreenGrid')?.classList.add('hidden');
+    $('voiceView')?.classList.remove('has-share');
+    const v=$('screenShareVideo');if(v){v.srcObject=null;}
+    Object.values(screenPCs).forEach(pc=>pc.close());
+    Object.keys(screenPCs).forEach(k=>delete screenPCs[k]);
+    showToast('🖥 اشتراک صفحه تموم شد');
+  });
+  socket.on('screen_request',async({from})=>{
+    if(!isSharing||!screenStream)return;
+    await createScreenPC(from,true);
+  });
+  socket.on('screen_offer',async({from,offer})=>{
+    let pc=screenPCs[from];
+    if(!pc)pc=await createScreenPC(from,false);
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer=await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('screen_answer',{to:from,answer});
+  });
+  socket.on('screen_answer',async({from,answer})=>{
+    const pc=screenPCs[from];
+    if(pc)await pc.setRemoteDescription(new RTCSessionDescription(answer));
+  });
+  socket.on('screen_ice',async({from,candidate})=>{
+    const pc=screenPCs[from];
+    if(pc&&candidate)await pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
 }
 
@@ -1796,52 +1836,7 @@ async function createScreenPC(toSocketId, asOfferer) {
   return pc;
 }
 
-function registerScreenShareEvents() {
-  // Someone started sharing - request their stream
-  socket.on('screen_share_started', async ({ userId, username, socketId }) => {
-    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده — کلیک کن ببینی`);
-    setText('ssUsername', `🖥 ${username}`);
-    $('screenShareArea')?.classList.remove('hidden');
-    // Create PC to receive
-    const pc = await createScreenPC(socketId, false);
-    // Ask sharer to send offer
-    socket.emit('screen_request', { to: socketId });
-  });
-
-  socket.on('screen_share_stopped', () => {
-    $('screenShareArea')?.classList.add('hidden');
-    const video = $('screenShareVideo');
-    if (video) { video.srcObject = null; }
-    Object.values(screenPCs).forEach(pc => pc.close());
-    screenPCs = {};
-    showToast('🖥 اشتراک صفحه تموم شد');
-  });
-
-  // Viewer requested our stream
-  socket.on('screen_request', async ({ from }) => {
-    if (!isSharing || !screenStream) return;
-    const pc = await createScreenPC(from, true);
-  });
-
-  socket.on('screen_offer', async ({ from, offer }) => {
-    let pc = screenPCs[from];
-    if (!pc) pc = await createScreenPC(from, false);
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    socket.emit('screen_answer', { to: from, answer });
-  });
-
-  socket.on('screen_answer', async ({ from, answer }) => {
-    const pc = screenPCs[from];
-    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-  });
-
-  socket.on('screen_ice', async ({ from, candidate }) => {
-    const pc = screenPCs[from];
-    if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
-  });
-}
+// screen share events moved to connectSocket
 
 // ─── CAMERA ───────────────────────────────────────────────────────────────────
 let cameraStream = null;

@@ -109,18 +109,35 @@
         <div class="vc-toolbar">
           <div class="vc-toolbar-left">
             <span class="vc-signal">🟢</span>
-            <span id="vcTitle" class="vc-ch-name">ویس عمومی</span>
+            <div>
+              <div id="vcTitle" class="vc-ch-name">ویس عمومی</div>
+              <div id="pingDisplay" class="ping-display" style="border:none;background:none;padding:0">
+                <span id="pingValue" style="font-size:11px;color:#6d6f78">--</span>
+                <span class="ping-label" style="font-size:10px;color:#6d6f78">ms</span>
+              </div>
+            </div>
           </div>
+
           <div class="vc-toolbar-center">
+            <!-- Audio group -->
             <button class="vc-tool-btn" id="vcMuteBtn" onclick="toggleVcMic()" title="میکروفون">🎤</button>
             <button class="vc-tool-btn" id="deafenBtn" onclick="toggleDeafen()" title="هدفون">🎧</button>
-            <button class="vc-tool-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥</button>
-            <button class="vc-tool-btn" id="cameraBtn" onclick="toggleCamera()" title="دوربین">📷</button>
-            <button class="vc-tool-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎛</button>
+            <div class="vc-divider"></div>
+            <!-- Video/Share group -->
+            <button class="vc-tool-btn" id="cameraBtn" onclick="toggleCamera()" title="دوربین">📹</button>
+            <button class="vc-tool-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥️</button>
+            <div class="vc-divider"></div>
+            <!-- Other -->
+            <button class="vc-tool-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎵</button>
             <button class="vc-tool-btn" onclick="toggleMemberList()" title="اعضا">👥</button>
           </div>
+
           <div class="vc-toolbar-right">
-            <button class="vc-leave-btn" onclick="leaveVoice()">📵</button>
+            <button class="vc-leave-btn" onclick="leaveVoice()" title="خروج از ویس">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 5h7V3H3v18h9v-2H5V5zm16 7l-4-4v3H9v2h8v3l4-4z"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
