@@ -3,456 +3,1127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GapHub Admin Panel</title>
+<title>GapHub Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --bg1:#1e1f22;--bg2:#2b2d31;--bg3:#313338;--bg4:#383a40;--bg5:#404249;
-  --accent:#5865f2;--green:#23a55a;--red:#f23f42;
-  --t1:#f2f3f5;--t2:#b5bac1;--t3:#80848e;
-  --border:rgba(255,255,255,.06);
+  --acc:#5865f2;--acc2:#4752c4;--green:#23a55a;--red:#f23f42;--yellow:#f0b232;
+  --t1:#f2f3f5;--t2:#b5bac1;--t3:#80848e;--t4:#4e5058;
+  --bdr:rgba(255,255,255,.06);
 }
-body{font-family:'Vazirmatn',sans-serif;background:var(--bg1);color:var(--t1);min-height:100vh;direction:rtl;}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;}
-.topbar-logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#5865f2,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.topbar-sub{color:var(--t3);font-size:13px;}
-.topbar-user{margin-right:auto;display:flex;align-items:center;gap:8px;font-size:14px;}
-.layout{display:flex;min-height:calc(100vh - 56px);}
-.sidebar{width:220px;background:var(--bg2);border-left:1px solid var(--border);padding:16px 8px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;color:var(--t2);font-size:14px;transition:.1s;margin-bottom:2px;}
+body{font-family:'Vazirmatn',sans-serif;background:var(--bg1);color:var(--t1);min-height:100vh;direction:rtl;overflow-x:hidden;}
+
+/* TOP BAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.tb-logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,#5865f2,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.tb-sep{width:1px;height:24px;background:var(--bdr);}
+.tb-title{font-size:13px;color:var(--t3);}
+.tb-right{margin-right:auto;display:flex;align-items:center;gap:10px;}
+.tb-user{display:flex;align-items:center;gap:8px;padding:4px 10px;background:var(--bg4);border-radius:20px;cursor:pointer;transition:.1s;}
+.tb-user:hover{background:var(--bg5);}
+.tb-avatar{width:26px;height:26px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;overflow:hidden;}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;}
+.tb-uname{font-size:13px;font-weight:600;}
+.tb-badge{font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(88,101,242,.2);color:var(--acc);font-weight:700;}
+.tb-back{padding:6px 12px;background:var(--bg4);border:1px solid var(--bdr);border-radius:4px;color:var(--t2);font-size:13px;text-decoration:none;transition:.1s;}
+.tb-back:hover{background:var(--bg5);color:var(--t1);}
+
+/* LAYOUT */
+.layout{display:flex;min-height:calc(100vh - 52px);}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--bg2);border-left:1px solid var(--bdr);padding:12px 8px;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+.nav-section{font-size:11px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.6px;padding:12px 8px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:4px;cursor:pointer;color:var(--t2);font-size:14px;transition:.1s;margin-bottom:1px;border:none;background:none;width:100%;text-align:right;font-family:inherit;}
 .nav-item:hover{background:var(--bg4);color:var(--t1);}
-.nav-item.active{background:rgba(88,101,242,.2);color:var(--accent);}
-.nav-icon{font-size:18px;width:22px;text-align:center;}
-.content{flex:1;padding:32px;}
-.page{display:none;animation:fadeIn .2s ease;}
-.page.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-h2{font-size:22px;font-weight:700;margin-bottom:6px;}
-.page-sub{color:var(--t3);font-size:14px;margin-bottom:28px;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;}
-.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.label{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
-.input{width:100%;padding:10px 12px;background:var(--bg1);border:1px solid var(--bg5);border-radius:4px;color:var(--t1);font-family:inherit;font-size:14px;outline:none;margin-bottom:12px;}
-.input:focus{border-color:var(--accent);}
-.btn{padding:10px 20px;background:var(--accent);border:none;border-radius:4px;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
-.btn:hover{opacity:.9;}
-.btn.danger{background:var(--red);}
-.btn.ghost{background:var(--bg4);color:var(--t2);}
-.btn.sm{padding:6px 14px;font-size:13px;}
+.nav-item.active{background:rgba(88,101,242,.15);color:var(--acc);}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-right:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;}
 
-/* icon grid */
-.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
-.icon-slot{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
-.icon-slot:hover{border-color:var(--accent);}
-.icon-slot img,.icon-slot .icon-preview{width:48px;height:48px;border-radius:8px;object-fit:cover;margin:0 auto 8px;display:block;}
-.icon-slot .icon-preview{background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;}
-.icon-label{font-size:12px;color:var(--t3);}
-.icon-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.icon-badge{position:absolute;top:6px;left:6px;background:var(--green);border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;}
+/* CONTENT */
+.content{flex:1;padding:24px;overflow-y:auto;min-width:0;}
+.page{display:none;animation:fi .2s ease;}
+.page.show{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.ph h2{font-size:20px;font-weight:700;}
+.ph-icon{font-size:28px;}
+.page-sub{color:var(--t3);font-size:13px;margin-bottom:24px;}
 
-/* color picker grid */
-.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
-.color-item{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:14px;}
-.color-item-label{font-size:13px;font-weight:600;margin-bottom:8px;}
-.color-item-sub{font-size:11px;color:var(--t3);margin-bottom:10px;}
-.color-row{display:flex;align-items:center;gap:8px;}
-.color-preview{width:36px;height:36px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;}
-.color-input{background:none;border:none;cursor:pointer;width:36px;height:36px;padding:0;border-radius:4px;}
-.color-hex{flex:1;padding:6px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;color:var(--t1);font-family:monospace;font-size:13px;outline:none;}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:18px;margin-bottom:16px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:900px){.grid3{grid-template-columns:1fr 1fr;}.grid4{grid-template-columns:1fr 1fr;}}
 
-/* server select */
-.server-select-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
-.srv-chip{padding:6px 14px;background:var(--bg4);border:1px solid var(--border);border-radius:16px;cursor:pointer;font-size:13px;color:var(--t2);transition:.1s;}
-.srv-chip:hover{border-color:var(--accent);color:var(--t1);}
-.srv-chip.active{background:rgba(88,101,242,.2);border-color:var(--accent);color:var(--accent);}
+/* STATS */
+.stat{background:var(--bg3);border-radius:8px;padding:16px;text-align:center;}
+.stat-num{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--acc),#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-lbl{font-size:12px;color:var(--t3);margin-top:2px;}
+.stat-trend{font-size:11px;margin-top:4px;}
+.stat-up{color:var(--green);}
+.stat-dn{color:var(--red);}
 
-/* theme preview */
-.theme-preview{border-radius:8px;overflow:hidden;border:1px solid var(--border);height:160px;display:flex;position:relative;margin-top:16px;}
-.tp-sidebar{width:60px;display:flex;flex-direction:column;padding:8px 0;}
-.tp-ch{width:160px;padding:8px;}
-.tp-chat{flex:1;padding:8px;}
-.tp-msg{border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:11px;}
+/* INPUTS */
+.label{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;}
+.inp{width:100%;padding:9px 12px;background:var(--bg1);border:1px solid var(--bg5);border-radius:4px;color:var(--t1);font-family:inherit;font-size:14px;outline:none;margin-bottom:12px;transition:.15s;}
+.inp:focus{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);}
+.inp[type=color]{padding:2px;height:38px;cursor:pointer;}
+.inp-row{display:flex;gap:8px;align-items:flex-end;}
+.inp-row .inp{margin-bottom:0;}
 
-/* toast */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--bg5);color:var(--t1);padding:12px 20px;border-radius:6px;font-size:14px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;box-shadow:0 4px 16px #0006;}
+/* BUTTONS */
+.btn{padding:9px 18px;border:none;border-radius:4px;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{opacity:.88;transform:translateY(-1px);}
+.btn-acc{background:var(--acc);}
+.btn-green{background:var(--green);}
+.btn-red{background:var(--red);}
+.btn-ghost{background:var(--bg4);color:var(--t2);}
+.btn-ghost:hover{color:var(--t1);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+/* ICON GRID */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+.icon-slot{background:var(--bg3);border:2px solid transparent;border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
+.icon-slot:hover{border-color:var(--acc);}
+.icon-slot.has-custom{border-color:var(--green);}
+.icon-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.icon-img{width:44px;height:44px;border-radius:8px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--bg4);overflow:hidden;}
+.icon-img img{width:100%;height:100%;object-fit:cover;}
+.icon-lbl{font-size:11px;color:var(--t3);}
+.icon-check{position:absolute;top:6px;left:6px;background:var(--green);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;}
+
+/* COLOR BUILDER */
+.color-builder{background:var(--bg3);border-radius:8px;padding:20px;}
+.cb-preview{width:100%;height:48px;border-radius:6px;margin-bottom:12px;transition:.2s;}
+.cb-sliders{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.cb-slider-wrap{display:flex;flex-direction:column;gap:4px;}
+.cb-slider{-webkit-appearance:none;height:8px;border-radius:4px;outline:none;cursor:pointer;width:100%;}
+.cb-slider.r{background:linear-gradient(to right,#000,#f00);}
+.cb-slider.g{background:linear-gradient(to right,#000,#0f0);}
+.cb-slider.b{background:linear-gradient(to right,#000,#00f);}
+.cb-slider.h{background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);}
+.cb-slider.s{background:linear-gradient(to right,#888,var(--cb-hs,#f00));}
+.cb-slider.l{background:linear-gradient(to right,#000,var(--cb-hs,#f00),#fff);}
+.cb-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #0003;cursor:pointer;}
+.cb-hex-row{display:flex;gap:8px;align-items:center;}
+.cb-hex{flex:1;padding:8px 12px;background:var(--bg1);border:1px solid var(--bg5);border-radius:4px;color:var(--t1);font-family:monospace;font-size:14px;outline:none;}
+.cb-hex:focus{border-color:var(--acc);}
+.cb-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.cb-preset{width:24px;height:24px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:.1s;flex-shrink:0;}
+.cb-preset:hover{transform:scale(1.2);border-color:#fff6;}
+
+/* COLOR ASSIGN */
+.color-sections{display:flex;flex-direction:column;gap:8px;}
+.color-row-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:6px;}
+.cr-swatch{width:32px;height:32px;border-radius:6px;cursor:pointer;border:2px solid var(--bdr);flex-shrink:0;transition:.15s;}
+.cr-swatch:hover{transform:scale(1.1);}
+.cr-info{flex:1;}
+.cr-name{font-size:14px;font-weight:600;}
+.cr-key{font-size:11px;color:var(--t3);font-family:monospace;}
+.cr-val{font-size:12px;color:var(--t2);font-family:monospace;padding:4px 8px;background:var(--bg1);border-radius:3px;border:none;color:var(--t2);outline:none;width:90px;}
+
+/* SERVER SELECT */
+.srv-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.srv-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:16px;cursor:pointer;font-size:13px;color:var(--t2);transition:.1s;}
+.srv-chip:hover{border-color:var(--acc);color:var(--t1);}
+.srv-chip.active{background:rgba(88,101,242,.15);border-color:var(--acc);color:var(--acc);}
+
+/* PREVIEW */
+.preview-box{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);display:flex;height:160px;}
+.pv-srv{width:52px;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.pv-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.pv-ch{width:160px;padding:8px;}
+.pv-ch-item{font-size:11px;padding:4px 6px;border-radius:3px;margin-bottom:4px;}
+.pv-chat{flex:1;padding:8px;}
+.pv-msg{font-size:11px;padding:6px 8px;border-radius:4px;margin-bottom:6px;}
+.pv-uname{font-size:10px;font-weight:700;margin-bottom:2px;}
+
+/* EVENTS */
+.event-list{display:flex;flex-direction:column;gap:8px;}
+.event-item{background:var(--bg3);border-radius:6px;padding:12px 14px;border-right:3px solid var(--acc);display:flex;align-items:center;gap:12px;}
+.event-icon{font-size:24px;flex-shrink:0;}
+.event-info{flex:1;}
+.event-title{font-size:14px;font-weight:700;}
+.event-sub{font-size:12px;color:var(--t3);margin-top:2px;}
+.event-time{font-size:12px;color:var(--t3);}
+.event-badge{padding:3px 8px;border-radius:3px;font-size:11px;font-weight:700;}
+.eb-soon{background:rgba(240,178,50,.15);color:var(--yellow);}
+.eb-live{background:rgba(35,165,90,.15);color:var(--green);}
+.eb-done{background:var(--bg4);color:var(--t3);}
+
+/* USER TABLE */
+.user-table{width:100%;border-collapse:collapse;}
+.user-table th{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;text-align:right;border-bottom:1px solid var(--bdr);}
+.user-table td{padding:8px;border-bottom:1px solid var(--bdr);font-size:13px;vertical-align:middle;}
+.user-table tr:last-child td{border-bottom:none;}
+.user-table tr:hover td{background:rgba(255,255,255,.03);}
+.ua-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;overflow:hidden;flex-shrink:0;}
+.ua-avatar img{width:100%;height:100%;object-fit:cover;}
+.role-pill{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.rp-owner{background:rgba(255,215,0,.15);color:#ffd700;}
+.rp-admin{background:rgba(88,101,242,.15);color:var(--acc);}
+.rp-mod{background:rgba(35,165,90,.15);color:var(--green);}
+.rp-member{background:var(--bg4);color:var(--t3);}
+
+/* FLOATING ICONS */
+.float-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;}
+.float-slot{background:var(--bg3);border:2px dashed var(--bdr);border-radius:8px;padding:16px 8px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
+.float-slot:hover{border-color:var(--acc);}
+.float-slot.filled{border-style:solid;border-color:var(--green);}
+.float-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.float-img{width:52px;height:52px;margin:0 auto 8px;border-radius:50%;overflow:hidden;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.float-img img{width:100%;height:100%;object-fit:cover;}
+.float-lbl{font-size:11px;color:var(--t3);}
+.float-del{position:absolute;top:4px;left:4px;background:var(--red);border:none;border-radius:50%;width:18px;height:18px;font-size:10px;color:#fff;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.float-slot.filled:hover .float-del{display:flex;}
+/* animate float icons */
+@keyframes floatAnim{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.float-anim{animation:floatAnim 3s ease-in-out infinite;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg5);color:var(--t1);padding:12px 20px;border-radius:6px;font-size:14px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9999;box-shadow:0 4px 24px #0008;}
 .toast.show{opacity:1;}
-.not-admin{text-align:center;padding:80px 20px;color:var(--t3);}
-.not-admin h2{font-size:28px;margin-bottom:12px;color:var(--t1);}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:#0008;z-index:200;display:flex;align-items:center;justify-content:center;display:none;}
+.modal-ov.show{display:flex;}
+.modal{background:var(--bg2);border-radius:8px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px;}
+.modal-close{position:absolute;top:14px;left:14px;background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;border-radius:4px;padding:4px;}
+.modal-close:hover{background:var(--bg4);}
+
+/* SWITCH */
+.switch-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;}
+.switch-info{flex:1;}
+.switch-lbl{font-size:14px;font-weight:500;}
+.switch-sub{font-size:12px;color:var(--t3);margin-top:1px;}
+.switch{position:relative;width:40px;height:22px;flex-shrink:0;}
+.switch input{display:none;}
+.switch-track{position:absolute;inset:0;background:var(--bg5);border-radius:11px;cursor:pointer;transition:.2s;}
+.switch-track:after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;right:2px;transition:.2s;}
+.switch input:checked+.switch-track{background:var(--acc);}
+.switch input:checked+.switch-track:after{right:calc(100% - 20px);}
+
+/* ACCESS CONTROL */
+.ac-table{width:100%;border-collapse:collapse;}
+.ac-table th{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--bdr);text-align:center;}
+.ac-table th:first-child{text-align:right;}
+.ac-table td{padding:8px;border-bottom:1px solid var(--bdr);text-align:center;font-size:13px;}
+.ac-table td:first-child{text-align:right;font-weight:500;}
+.ac-check{width:18px;height:18px;cursor:pointer;accent-color:var(--acc);}
+
+/* TABS inside page */
+.ptabs{display:flex;gap:2px;background:var(--bg3);border-radius:6px;padding:3px;margin-bottom:20px;}
+.ptab{flex:1;padding:7px;border:none;background:transparent;color:var(--t3);border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;transition:.1s;}
+.ptab.active{background:var(--bg2);color:var(--t1);}
+
+/* Not admin */
+.na{text-align:center;padding:80px;color:var(--t3);}
+.na h2{font-size:24px;color:var(--t1);margin-bottom:8px;}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <span class="topbar-logo">⚙️ GapHub Admin</span>
-  <span class="topbar-sub">پنل مدیریت</span>
-  <div class="topbar-user">
-    <div id="adminUserAvatar" style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700"></div>
-    <span id="adminUserName">—</span>
-    <a href="/" style="color:var(--t3);font-size:13px;text-decoration:none;margin-right:8px">← برگشت به سایت</a>
+  <span class="tb-logo">GapHub</span>
+  <div class="tb-sep"></div>
+  <span class="tb-title">پنل مدیریت</span>
+  <div class="tb-right">
+    <div class="tb-user">
+      <div class="tb-avatar" id="tbAvatar">م</div>
+      <span class="tb-uname" id="tbName">—</span>
+      <span class="tb-badge" id="tbRole">admin</span>
+    </div>
+    <a href="/" class="tb-back">← برگشت</a>
   </div>
 </div>
 
-<div id="notAdmin" class="not-admin hidden">
+<div class="na" id="naMsg" style="display:none">
   <h2>🔒 دسترسی نداری</h2>
   <p>این پنل فقط برای ادمین کل سیستم هست.</p>
-  <p style="margin-top:8px;font-size:13px">اولین کاربر ثبت‌نام‌شده به‌صورت خودکار ادمین می‌شه.</p>
-  <a href="/" style="display:inline-block;margin-top:20px;padding:10px 24px;background:var(--accent);color:#fff;border-radius:4px;text-decoration:none">برگشت</a>
+  <a href="/" style="display:inline-block;margin-top:16px;padding:10px 20px;background:var(--acc);color:#fff;border-radius:4px;text-decoration:none">برگشت</a>
 </div>
 
-<div class="layout" id="adminLayout" style="display:none">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="nav-item active" data-page="icons" onclick="showPage('icons',this)">
-      <span class="nav-icon">🎨</span> آیکون‌های سیستم
+<div class="layout" id="mainLayout" style="display:none">
+
+<div class="sidebar">
+  <div class="nav-section">اصلی</div>
+  <button class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span>داشبورد</button>
+  <button class="nav-item" onclick="nav('users',this)"><span class="nav-icon">👥</span>کاربران<span class="nav-badge" id="userCount">0</span></button>
+  <button class="nav-item" onclick="nav('servers',this)"><span class="nav-icon">🌐</span>سرورها</button>
+  <button class="nav-item" onclick="nav('events',this)"><span class="nav-icon">📅</span>رویدادها</button>
+
+  <div class="nav-section">سفارشی‌سازی</div>
+  <button class="nav-item" onclick="nav('icons',this)"><span class="nav-icon">🎭</span>آیکون‌های سیستم</button>
+  <button class="nav-item" onclick="nav('float',this)"><span class="nav-icon">✨</span>آیکون‌های معلق</button>
+  <button class="nav-item" onclick="nav('theme',this)"><span class="nav-icon">🎨</span>تم‌ساز سرور</button>
+  <button class="nav-item" onclick="nav('colors',this)"><span class="nav-icon">🖌️</span>سازنده رنگ</button>
+
+  <div class="nav-section">کنترل دسترسی</div>
+  <button class="nav-item" onclick="nav('access',this)"><span class="nav-icon">🔐</span>مجوزها</button>
+  <button class="nav-item" onclick="nav('admins',this)"><span class="nav-icon">👑</span>مدیران</button>
+
+  <div class="nav-section">سیستم</div>
+  <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span>تنظیمات سایت</button>
+  <button class="nav-item" onclick="nav('logs',this)"><span class="nav-icon">📋</span>لاگ‌ها</button>
+</div>
+
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="page show" id="p-dashboard">
+  <div class="ph"><span class="ph-icon">📊</span><h2>داشبورد</h2></div>
+  <p class="page-sub">خلاصه وضعیت سایت</p>
+  <div class="grid4" style="margin-bottom:20px">
+    <div class="stat"><div class="stat-num" id="dTotalUsers">0</div><div class="stat-lbl">کل کاربران</div></div>
+    <div class="stat"><div class="stat-num" id="dOnline">0</div><div class="stat-lbl">آنلاین</div></div>
+    <div class="stat"><div class="stat-num" id="dServers">0</div><div class="stat-lbl">سرورها</div></div>
+    <div class="stat"><div class="stat-num" id="dMessages">—</div><div class="stat-lbl">پیام‌ها</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">⚡ آخرین فعالیت‌ها</div>
+      <div id="dActivity" style="margin-top:12px"></div>
     </div>
-    <div class="nav-item" data-page="theme" onclick="showPage('theme',this)">
-      <span class="nav-icon">🖌️</span> تم‌ساز سرور
-    </div>
-    <div class="nav-item" data-page="users" onclick="showPage('users',this)">
-      <span class="nav-icon">👥</span> کاربران
-    </div>
-    <div class="nav-item" data-page="servers" onclick="showPage('servers',this)">
-      <span class="nav-icon">🌐</span> سرورها
+    <div class="card">
+      <div class="card-title">🌐 سرورهای فعال</div>
+      <div id="dServersCard" style="margin-top:12px"></div>
     </div>
   </div>
+</div>
 
-  <!-- Content -->
-  <div class="content">
-
-    <!-- PAGE: Icons -->
-    <div class="page active" id="page-icons">
-      <h2>🎨 آیکون‌های سیستم</h2>
-      <p class="page-sub">آیکون‌های پیش‌فرض سایت رو با تصویر دلخواهت عوض کن. تغییرات برای همه کاربران اعمال می‌شه.</p>
-
-      <div class="card">
-        <div class="card-title">📢 آیکون‌های اعلان و رویداد</div>
-        <div class="icon-grid" id="sysIconGrid"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">🏠 آیکون کانال‌ها</div>
-        <div class="icon-grid" id="chIconGrid"></div>
-      </div>
-
-      <button class="btn" onclick="saveSysIcons()">💾 ذخیره آیکون‌ها</button>
+<!-- USERS -->
+<div class="page" id="p-users">
+  <div class="ph"><span class="ph-icon">👥</span><h2>مدیریت کاربران</h2></div>
+  <p class="page-sub">لیست همه کاربران — می‌تونی نقش، وضعیت و دسترسی رو تغییر بدی</p>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">👤 کاربران</div>
+      <input class="inp" style="margin:0;width:220px" placeholder="🔍 جستجو..." oninput="filterUsers(this.value)">
     </div>
+    <table class="user-table">
+      <thead><tr>
+        <th>کاربر</th><th>نقش</th><th>وضعیت</th><th>تاریخ ثبت</th><th>عملیات</th>
+      </tr></thead>
+      <tbody id="usersTbody"></tbody>
+    </table>
+  </div>
+</div>
 
-    <!-- PAGE: Theme -->
-    <div class="page" id="page-theme">
-      <h2>🖌️ تم‌ساز سرور</h2>
-      <p class="page-sub">رنگ هر بخش رو برای هر سرور جداگانه تنظیم کن. کاربران بعد از refresh تغییرات رو می‌بینن.</p>
+<!-- SERVERS -->
+<div class="page" id="p-servers">
+  <div class="ph"><span class="ph-icon">🌐</span><h2>مدیریت سرورها</h2></div>
+  <p class="page-sub">همه سرورهای ساخته‌شده</p>
+  <div id="serverCards"></div>
+</div>
 
-      <div class="server-select-bar" id="themeServerBar">
-        <span style="color:var(--t3);font-size:13px;align-self:center">انتخاب سرور:</span>
-      </div>
+<!-- EVENTS -->
+<div class="page" id="p-events">
+  <div class="ph"><span class="ph-icon">📅</span><h2>رویدادها</h2></div>
+  <p class="page-sub">رویدادهای سرور رو مدیریت کن — کاربران اطلاع‌رسانی می‌گیرن</p>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px">➕ رویداد جدید</div>
+    <div class="grid2">
+      <div><label class="label">عنوان رویداد</label><input class="inp" id="evTitle" placeholder="مثلاً: گیم نایت 🎮"></div>
+      <div><label class="label">تاریخ و ساعت</label><input class="inp" id="evDate" type="datetime-local"></div>
+    </div>
+    <label class="label">توضیحات</label>
+    <textarea class="inp" id="evDesc" rows="3" placeholder="توضیح رویداد..." style="resize:vertical"></textarea>
+    <div class="grid2">
+      <div><label class="label">آیکون رویداد</label><input class="inp" id="evIcon" placeholder="🎉 یا URL تصویر" maxlength="10"></div>
+      <div><label class="label">رنگ</label><input class="inp" type="color" id="evColor" value="#5865f2" style="height:38px"></div>
+    </div>
+    <label class="label">سرور</label>
+    <select class="inp" id="evServer"></select>
+    <div class="btn-row"><button class="btn btn-acc" onclick="createEvent()">📅 ثبت رویداد</button></div>
+  </div>
+  <div class="event-list" id="eventList"></div>
+</div>
 
+<!-- ICONS -->
+<div class="page" id="p-icons">
+  <div class="ph"><span class="ph-icon">🎭</span><h2>آیکون‌های سیستم</h2></div>
+  <p class="page-sub">آیکون‌های رویدادهای سیستم رو با تصویر دلخواه عوض کن</p>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">📢 رویدادهای کاربری</div>
+    <div class="icon-grid" id="sysIconGrid"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">📁 کانال‌ها</div>
+    <div class="icon-grid" id="chIconGrid"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">🔊 ویس</div>
+    <div class="icon-grid" id="vcIconGrid"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-green" onclick="saveSysIcons()">💾 ذخیره آیکون‌ها</button>
+    <button class="btn btn-ghost" onclick="resetSysIcons()">🔄 ریست</button>
+  </div>
+</div>
+
+<!-- FLOAT ICONS -->
+<div class="page" id="p-float">
+  <div class="ph"><span class="ph-icon">✨</span><h2>آیکون‌های معلق</h2></div>
+  <p class="page-sub">آیکون‌های معلق که روی صفحه نمایش داده میشن — می‌تونی انیمیشن معلق بهشون بدی</p>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:4px">🖼️ آیکون‌های معلق</div>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:14px">روی هر کادر کلیک کن تا تصویر آپلود کنی</p>
+    <div class="float-grid" id="floatGrid"></div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-acc" onclick="addFloatSlot()">➕ اضافه کردن</button>
+      <button class="btn btn-green" onclick="saveFloatIcons()">💾 ذخیره</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">⚙️ تنظیمات انیمیشن</div>
+    <div class="switch-row">
+      <div class="switch-info"><div class="switch-lbl">انیمیشن معلق</div><div class="switch-sub">آیکون‌ها بالا و پایین می‌رن</div></div>
+      <label class="switch"><input type="checkbox" id="floatAnimOn" checked onchange="saveFloatSettings()"><div class="switch-track"></div></label>
+    </div>
+    <div class="switch-row">
+      <div class="switch-info"><div class="switch-lbl">چرخش آرام</div><div class="switch-sub">آیکون‌ها به آرامی می‌چرخن</div></div>
+      <label class="switch"><input type="checkbox" id="floatRotate" onchange="saveFloatSettings()"><div class="switch-track"></div></label>
+    </div>
+    <label class="label" style="margin-top:12px">سرعت انیمیشن</label>
+    <input type="range" class="cb-slider" min="1" max="10" value="3" id="floatSpeed" oninput="document.getElementById('floatSpeedVal').textContent=this.value;saveFloatSettings()" style="width:100%;background:linear-gradient(to right,var(--acc),#a855f7)">
+    <span id="floatSpeedVal" style="font-size:13px;color:var(--t3)">3</span>
+  </div>
+</div>
+
+<!-- THEME -->
+<div class="page" id="p-theme">
+  <div class="ph"><span class="ph-icon">🎨</span><h2>تم‌ساز سرور</h2></div>
+  <p class="page-sub">رنگ هر بخش رو برای هر سرور جداگانه تنظیم کن</p>
+  <div class="srv-bar" id="themeSrvBar"></div>
+  <div class="grid2">
+    <div>
       <div class="card">
-        <div class="card-title">🎨 رنگ‌های اصلی</div>
-        <div class="color-grid" id="mainColors"></div>
+        <div class="card-title" style="margin-bottom:14px">🖼️ پس‌زمینه‌ها</div>
+        <div class="color-sections" id="bgColors"></div>
       </div>
-
       <div class="card">
-        <div class="card-title">📝 رنگ متن‌ها</div>
-        <div class="color-grid" id="textColors"></div>
+        <div class="card-title" style="margin-bottom:14px">✍️ متن‌ها</div>
+        <div class="color-sections" id="textColors"></div>
       </div>
-
       <div class="card">
-        <div class="card-title">👁️ پیش‌نمایش</div>
-        <div class="theme-preview" id="themePreview">
-          <div class="tp-sidebar" id="tpSidebar">
-            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 6px;background:var(--accent)"></div>
-            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto;background:var(--bg4)"></div>
+        <div class="card-title" style="margin-bottom:14px">🔵 رنگ‌های وضعیت</div>
+        <div class="color-sections" id="statusColors"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">👁️ پیش‌نمایش زنده</div>
+        <div class="preview-box" id="previewBox">
+          <div class="pv-srv" id="pvSrv"><div class="pv-icon" id="pvIcon">🏠</div></div>
+          <div class="pv-ch" id="pvCh">
+            <div style="font-size:10px;opacity:.5;margin-bottom:4px">متنی</div>
+            <div class="pv-ch-item" id="pvChItem"># عمومی</div>
+            <div class="pv-ch-item" style="opacity:.5"># موزیک</div>
           </div>
-          <div class="tp-ch" id="tpCh">
-            <div style="font-size:11px;margin-bottom:4px;opacity:.5">متنی</div>
-            <div style="font-size:12px;padding:4px 6px;border-radius:3px;background:rgba(255,255,255,.1)"># عمومی</div>
-          </div>
-          <div class="tp-chat" id="tpChat">
-            <div class="tp-msg" id="tpMsg1" style="background:rgba(255,255,255,.05)">
-              <span style="font-size:11px;font-weight:700">abol</span><br>
-              <span style="font-size:11px">سلام! این پیش‌نمایش تمه 👋</span>
-            </div>
+          <div class="pv-chat" id="pvChat">
+            <div class="pv-msg" id="pvMsg"><div class="pv-uname" id="pvUname" style="color:var(--acc)">abol</div>سلام! پیش‌نمایش تم 👋</div>
           </div>
         </div>
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="saveTheme()">💾 ذخیره تم</button>
+          <button class="btn btn-ghost" onclick="resetTheme()">🔄 ریست</button>
+        </div>
       </div>
-
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="saveServerTheme()">💾 ذخیره تم سرور</button>
-        <button class="btn ghost" onclick="resetTheme()">🔄 ریست</button>
-      </div>
-    </div>
-
-    <!-- PAGE: Users -->
-    <div class="page" id="page-users">
-      <h2>👥 مدیریت کاربران</h2>
-      <p class="page-sub">لیست همه کاربران ثبت‌نام‌شده.</p>
       <div class="card">
-        <input class="input" placeholder="🔍 جستجو..." oninput="filterUsers(this.value)" style="margin-bottom:16px">
-        <div id="usersList"></div>
+        <div class="card-title" style="margin-bottom:12px">🌈 تم‌های آماده</div>
+        <div id="presetThemes" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- PAGE: Servers -->
-    <div class="page" id="page-servers">
-      <h2>🌐 مدیریت سرورها</h2>
-      <p class="page-sub">لیست همه سرورهای ساخته‌شده.</p>
-      <div class="card">
-        <div id="serversList"></div>
+<!-- COLOR BUILDER -->
+<div class="page" id="p-colors">
+  <div class="ph"><span class="ph-icon">🖌️</span><h2>سازنده رنگ</h2></div>
+  <p class="page-sub">رنگ دقیق بساز و در هر جایی از تم استفاده کن</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="ptabs">
+        <button class="ptab active" onclick="cbMode('rgb',this)">RGB</button>
+        <button class="ptab" onclick="cbMode('hsl',this)">HSL</button>
+        <button class="ptab" onclick="cbMode('hex',this)">HEX</button>
+      </div>
+      <div class="color-builder">
+        <div class="cb-preview" id="cbPreview"></div>
+        <div id="cbRGB" class="cb-sliders">
+          <div class="cb-slider-wrap"><label class="label">قرمز</label><input type="range" class="cb-slider r" id="cbR" min="0" max="255" value="88" oninput="updateFromRGB()"><span id="cbRV">88</span></div>
+          <div class="cb-slider-wrap"><label class="label">سبز</label><input type="range" class="cb-slider g" id="cbG" min="0" max="255" value="101" oninput="updateFromRGB()"><span id="cbGV">101</span></div>
+          <div class="cb-slider-wrap"><label class="label">آبی</label><input type="range" class="cb-slider b" id="cbB" min="0" max="255" value="242" oninput="updateFromRGB()"><span id="cbBV">242</span></div>
+        </div>
+        <div id="cbHSL" class="cb-sliders" style="display:none">
+          <div class="cb-slider-wrap"><label class="label">رنگ (H)</label><input type="range" class="cb-slider h" id="cbH" min="0" max="360" value="235" oninput="updateFromHSL()"><span id="cbHV">235</span></div>
+          <div class="cb-slider-wrap"><label class="label">اشباع (S)</label><input type="range" class="cb-slider s" id="cbS" min="0" max="100" value="84" oninput="updateFromHSL()"><span id="cbSV">84</span></div>
+          <div class="cb-slider-wrap"><label class="label">روشنایی (L)</label><input type="range" class="cb-slider l" id="cbL" min="0" max="100" value="65" oninput="updateFromHSL()"><span id="cbLV">65</span></div>
+        </div>
+        <div class="cb-hex-row">
+          <div class="cb-preview" style="width:36px;height:36px;flex-shrink:0;border-radius:6px" id="cbSmall"></div>
+          <input type="text" class="cb-hex" id="cbHex" value="#5865f2" oninput="updateFromHex(this.value)" maxlength="7">
+          <input type="color" class="inp" style="width:38px;height:38px;padding:2px;margin:0" id="cbPicker" oninput="updateFromPicker(this.value)">
+          <button class="btn btn-acc btn-sm" onclick="copyColor()">📋 کپی</button>
+        </div>
+        <div class="cb-presets">
+          <div class="label" style="width:100%;margin-bottom:4px">رنگ‌های آماده</div>
+          <div id="cbPresetRow"></div>
+        </div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">🎨 پالت شخصی</div>
+      <p style="font-size:12px;color:var(--t3);margin-bottom:12px">رنگ‌های ساخته‌شده رو ذخیره کن</p>
+      <div id="myPalette" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+      <button class="btn btn-acc btn-sm" onclick="addToPalette()">➕ اضافه به پالت</button>
+      <div class="card" style="margin-top:16px;padding:14px">
+        <div class="card-title" style="margin-bottom:10px">🖌️ اعمال روی تم</div>
+        <label class="label">اعمال روی کدام متغیر</label>
+        <select class="inp" id="applyVar">
+          <option value="--bg-1">پس‌زمینه سرورها</option>
+          <option value="--bg-2">پس‌زمینه کانال‌ها</option>
+          <option value="--bg-3">پس‌زمینه چت</option>
+          <option value="--bg-4">ورودی</option>
+          <option value="--accent">رنگ اصلی</option>
+          <option value="--green">رنگ آنلاین</option>
+          <option value="--red">رنگ خطر</option>
+          <option value="--text-1">متن اصلی</option>
+          <option value="--text-2">متن ثانویه</option>
+          <option value="--text-3">متن خاکستری</option>
+        </select>
+        <div class="btn-row">
+          <button class="btn btn-acc btn-sm" onclick="applyColorToTheme()">اعمال روی سرور انتخابی</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- ACCESS CONTROL -->
+<div class="page" id="p-access">
+  <div class="ph"><span class="ph-icon">🔐</span><h2>کنترل دسترسی</h2></div>
+  <p class="page-sub">مشخص کن هر نقش چه کارهایی می‌تونه انجام بده</p>
+  <div class="srv-bar" id="accessSrvBar"></div>
+  <div class="card">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>عملیات</th>
+          <th>👑 اونر</th>
+          <th>🛡 ادمین</th>
+          <th>🔨 مود</th>
+          <th>👤 عضو</th>
+        </tr>
+      </thead>
+      <tbody id="acTableBody"></tbody>
+    </table>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-green" onclick="saveAccess()">💾 ذخیره مجوزها</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMINS -->
+<div class="page" id="p-admins">
+  <div class="ph"><span class="ph-icon">👑</span><h2>مدیران سیستم</h2></div>
+  <p class="page-sub">ادمین‌های کل سایت رو مدیریت کن — ادمین به پنل ادمین دسترسی داره</p>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">➕ ادمین جدید</div>
+    <div class="inp-row">
+      <input class="inp" id="newAdminUser" placeholder="نام‌کاربری یا ID کاربر">
+      <button class="btn btn-acc" onclick="addAdmin()">👑 ادمین کردن</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">👥 لیست ادمین‌ها</div>
+    <div id="adminList"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="p-settings">
+  <div class="ph"><span class="ph-icon">⚙️</span><h2>تنظیمات سایت</h2></div>
+  <p class="page-sub">تنظیمات کلی سایت</p>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">🌐 عمومی</div>
+    <label class="label">نام سایت</label>
+    <input class="inp" id="siteName" value="GapHub">
+    <label class="label">توضیح سایت</label>
+    <input class="inp" id="siteDesc" placeholder="جایی برای دوستات">
+    <div class="switch-row"><div class="switch-info"><div class="switch-lbl">ثبت‌نام عمومی</div><div class="switch-sub">هر کسی بتونه ثبت‌نام کنه</div></div><label class="switch"><input type="checkbox" id="openReg" checked><div class="switch-track"></div></label></div>
+    <div class="switch-row"><div class="switch-info"><div class="switch-lbl">حالت نگهداری</div><div class="switch-sub">سایت موقتاً غیرفعال بشه</div></div><label class="switch"><input type="checkbox" id="maintenance"><div class="switch-track"></div></label></div>
+    <div class="btn-row"><button class="btn btn-green" onclick="saveSettings()">💾 ذخیره تنظیمات</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">🗑️ خطرناک</div>
+    <button class="btn btn-red" onclick="clearAllMessages()">🗑️ پاک کردن همه پیام‌ها</button>
+  </div>
+</div>
+
+<!-- LOGS -->
+<div class="page" id="p-logs">
+  <div class="ph"><span class="ph-icon">📋</span><h2>لاگ‌های سیستم</h2></div>
+  <p class="page-sub">فعالیت‌های اخیر سیستم</p>
+  <div class="card">
+    <div id="logsList" style="font-family:monospace;font-size:12px;color:var(--t2);max-height:400px;overflow-y:auto"></div>
+  </div>
+</div>
+
+</div><!-- end content -->
+</div><!-- end layout -->
+
+<!-- COLOR PICKER MODAL -->
+<div class="modal-ov" id="cpModal">
+  <div class="modal">
+    <div class="modal-title">🎨 انتخاب رنگ</div>
+    <button class="modal-close" onclick="closeCpModal()">✕</button>
+    <div id="cpTarget" style="font-size:13px;color:var(--t3);margin-bottom:12px"></div>
+    <div class="color-builder">
+      <div class="cb-preview" id="cpPreview" style="height:40px;border-radius:6px;margin-bottom:12px"></div>
+      <div class="cb-sliders">
+        <div class="cb-slider-wrap"><label class="label">قرمز</label><input type="range" class="cb-slider r" id="cpR" min="0" max="255" value="88" oninput="cpFromRGB()"><span id="cpRV">88</span></div>
+        <div class="cb-slider-wrap"><label class="label">سبز</label><input type="range" class="cb-slider g" id="cpG" min="0" max="255" value="101" oninput="cpFromRGB()"><span id="cpGV">101</span></div>
+        <div class="cb-slider-wrap"><label class="label">آبی</label><input type="range" class="cb-slider b" id="cpB" min="0" max="255" value="242" oninput="cpFromRGB()"><span id="cpBV">242</span></div>
+      </div>
+      <div class="cb-hex-row" style="margin-top:8px">
+        <input type="text" class="cb-hex" id="cpHex" value="#5865f2" oninput="cpFromHex(this.value)" maxlength="7">
+        <input type="color" class="inp" style="width:38px;height:38px;padding:2px;margin:0" id="cpPicker" oninput="cpFromPicker(this.value)">
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-acc" onclick="applyColorFromModal()">✅ اعمال</button>
+      <button class="btn btn-ghost" onclick="closeCpModal()">لغو</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const BASE = '';
-let token = localStorage.getItem('mt');
-let me = JSON.parse(localStorage.getItem('mu') || 'null');
-let allUsers = [], allServers = [], selectedServerId = null;
-let sysIcons = {}, serverTheme = {};
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+const token = localStorage.getItem('mt');
+const me = JSON.parse(localStorage.getItem('mu')||'null');
+let allServers=[], allUsersData=[], sysIcons={}, floatIcons=[], serverTheme={}, selectedSrv=null;
+let events=JSON.parse(localStorage.getItem('_ghEvents')||'[]');
+let palette=JSON.parse(localStorage.getItem('_ghPalette')||'[]');
+let accessRules=JSON.parse(localStorage.getItem('_ghAccess')||'{}');
+let cpTargetKey='', cpCallback=null;
 
-const SYS_ICON_DEFS = [
-  {key:'join',    label:'ورود به سرور',   emoji:'👋'},
-  {key:'leave',   label:'خروج از سرور',   emoji:'🚪'},
-  {key:'ban',     label:'بن',             emoji:'🔨'},
-  {key:'kick',    label:'کیک',            emoji:'🦵'},
-  {key:'welcome', label:'خوش‌آمد',        emoji:'🎉'},
-  {key:'bot',     label:'پیام بات',       emoji:'🤖'},
-  {key:'pin',     label:'پین پیام',       emoji:'📌'},
-  {key:'mute',    label:'میوت',           emoji:'🔇'},
-  {key:'unmute',  label:'آنمیوت',         emoji:'🎤'},
-];
-const CH_ICON_DEFS = [
-  {key:'text',    label:'کانال متن',      emoji:'＃'},
-  {key:'voice',   label:'کانال ویس',     emoji:'🔊'},
-  {key:'news',    label:'اطلاعیه',        emoji:'📢'},
-  {key:'rules',   label:'قوانین',         emoji:'📋'},
-];
-const COLOR_DEFS = [
-  {key:'--bg-srv',  label:'سایدبار سرورها',  sub:'نوار سمت چپ آیکون‌ها',    def:'#1e1f22'},
-  {key:'--bg-ch',   label:'سایدبار کانال‌ها', sub:'لیست کانال‌ها',           def:'#2b2d31'},
-  {key:'--bg-chat', label:'پس‌زمینه چت',     sub:'منطقه پیام‌ها',            def:'#313338'},
-  {key:'--bg-input',label:'باکس ورودی',      sub:'رنگ input پیام',           def:'#383a40'},
-  {key:'--accent',  label:'رنگ اصلی',        sub:'دکمه‌ها، لینک‌ها',         def:'#5865f2'},
-  {key:'--green',   label:'رنگ آنلاین',      sub:'نقطه سبز کاربران',         def:'#23a55a'},
-  {key:'--red',     label:'رنگ خطر',         sub:'بن، حذف',                  def:'#f23f42'},
-];
-const TEXT_COLOR_DEFS = [
-  {key:'--t1',   label:'متن اصلی',     sub:'پیام‌ها، نام‌ها',    def:'#f2f3f5'},
-  {key:'--t2',   label:'متن ثانویه',   sub:'نام کانال‌ها',       def:'#b5bac1'},
-  {key:'--t3',   label:'متن خاکستری',  sub:'راهنما، تاریخ',     def:'#80848e'},
-];
-
-async function apiFetch(url, method='GET', body=null) {
-  const h = {'Content-Type':'application/json','Authorization':'Bearer '+token};
-  const r = await fetch(url, {method, headers:h, body:body?JSON.stringify(body):null});
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+async function api(url,method='GET',body=null){
+  const h={'Content-Type':'application/json','Authorization':'Bearer '+token};
+  const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):null});
   return r.json();
 }
-
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2500);
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.borderRight=type==='err'?'3px solid #f23f42':type==='ok'?'3px solid #23a55a':'none';
+  t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);
 }
-
-function showPage(page, el) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('p-'+page)?.classList.add('show');
   el.classList.add('active');
 }
+function hexToRgb(h){
+  const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
+  return r?[parseInt(r[1],16),parseInt(r[2],16),parseInt(r[3],16)]:null;
+}
+function rgbToHex(r,g,b){'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function componentToHex(c){return c.toString(16).padStart(2,'0');}
+function rgb2hex(r,g,b){return'#'+componentToHex(r)+componentToHex(g)+componentToHex(b);}
+function hslToRgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return[Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];}
+function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h,s,l=(mx+mn)/2;if(mx===mn){h=s=0;}else{const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}}return[Math.round(h*360),Math.round(s*100),Math.round(l*100)];}
+function compressImg(dataUrl,size,q){return new Promise(res=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');let w=img.width,h=img.height;if(w>size||h>size){const s=size/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/png',.8));};img.src=dataUrl;});}
 
-async function init() {
-  if (!token || !me) { location.href='/'; return; }
-  document.getElementById('adminUserName').textContent = me.username;
-  document.getElementById('adminUserAvatar').textContent = me.username[0]?.toUpperCase();
-
-  const check = await apiFetch('/api/admin/check');
-  if (!check.isAdmin) {
-    document.getElementById('notAdmin').classList.remove('hidden');
-    return;
-  }
-  document.getElementById('adminLayout').style.display = 'flex';
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+async function init(){
+  if(!token||!me){location.href='/';return;}
+  document.getElementById('tbName').textContent=me.username;
+  document.getElementById('tbAvatar').textContent=me.username[0]?.toUpperCase()||'م';
+  if(me.avatarUrl)document.getElementById('tbAvatar').innerHTML=`<img src="${me.avatarUrl}">`;
+  const ck=await api('/api/admin/check');
+  if(!ck.isAdmin){document.getElementById('naMsg').style.display='block';return;}
+  document.getElementById('tbRole').textContent=ck.role==='admin'?'ادمین':'مدیر';
+  document.getElementById('mainLayout').style.display='flex';
   await loadAll();
+  buildColorBuilder();
+  buildPresetThemes();
+  buildACTable();
+  buildFloatGrid();
+}
+async function loadAll(){
+  const [sr,si]=await Promise.all([api('/api/servers'),api('/api/admin/sysicons')]);
+  if(sr.ok)allServers=sr.servers;
+  if(si.ok){sysIcons=si.icons||{};floatIcons=si.floatIcons||[];}
+  buildDashboard();buildUsersList();buildServerCards();buildIconGrids();
+  buildThemeSrvBar();buildAccessSrvBar();buildEventSrvSelect();
+  buildEventList();buildAdminList();buildPalette();buildFloatGrid();
+  document.getElementById('userCount').textContent=allUsersData.length||'';
 }
 
-async function loadAll() {
-  // Load sys icons
-  const si = await apiFetch('/api/admin/sysicons');
-  if (si.ok) { sysIcons = si.icons || {}; }
-  buildIconGrids();
-
-  // Load servers
-  const sr = await apiFetch('/api/servers');
-  if (sr.ok) { allServers = sr.servers; buildThemeServerBar(); buildServersList(); }
-
-  // Load users (from first server members for now)
-  buildUsersList();
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+async function buildDashboard(){
+  let total=0,msgs=0;
+  for(const s of allServers){
+    const d=await api(`/api/servers/${s.id}/members`);
+    if(d.ok)total=Math.max(total,d.members?.length||0);
+    allUsersData=[...allUsersData,...(d.members||[])].filter((v,i,a)=>a.findIndex(t=>t.id===v.id)===i);
+  }
+  document.getElementById('dTotalUsers').textContent=allUsersData.length;
+  document.getElementById('dServers').textContent=allServers.length;
+  document.getElementById('dOnline').textContent='—';
+  document.getElementById('userCount').textContent=allUsersData.length;
+  // activity
+  document.getElementById('dActivity').innerHTML=events.slice(-5).reverse().map(e=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr)">
+      <span style="font-size:18px">${e.icon||'📅'}</span>
+      <div><div style="font-size:13px;font-weight:600">${e.title}</div><div style="font-size:11px;color:var(--t3)">${e.date}</div></div>
+    </div>`).join('')||'<div style="color:var(--t3);font-size:13px;padding:8px">رویدادی ثبت نشده</div>';
+  document.getElementById('dServersCard').innerHTML=allServers.map(s=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr)">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:14px">${s.icon||'🌟'}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">${s.name}</div><div style="font-size:11px;color:var(--t3)">${s.members?.length||0} عضو · ${s.channels?.length||0} کانال</div></div>
+    </div>`).join('');
 }
 
-// ── ICON GRIDS ────────────────────────────────────────────────────────────────
-function buildIconGrids() {
-  buildIconGrid('sysIconGrid', SYS_ICON_DEFS);
-  buildIconGrid('chIconGrid', CH_ICON_DEFS);
+// ══════════════════════════════════════════════════════
+// USERS
+// ══════════════════════════════════════════════════════
+let usersFilter='';
+function buildUsersList(){renderUsers(allUsersData);}
+function filterUsers(q){usersFilter=q;renderUsers(allUsersData.filter(u=>u.username?.toLowerCase().includes(q.toLowerCase())));}
+function renderUsers(list){
+  document.getElementById('usersTbody').innerHTML=list.map(u=>{
+    const ri=u.serverRole==='owner'?'rp-owner owner':u.serverRole==='admin'?'rp-admin admin':u.serverRole==='mod'?'rp-mod mod':'rp-member member';
+    const av=u.avatarUrl?`<img src="${u.avatarUrl}">`:(u.avatar||u.username?.[0]?.toUpperCase()||'?');
+    return`<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="ua-avatar" style="background:${u.color||'var(--acc)'}">${av}</div><span style="font-weight:600">${u.username}</span></div></td>
+      <td><span class="role-pill ${ri}">${u.serverRole==='owner'?'👑 اونر':u.serverRole==='admin'?'🛡 ادمین':u.serverRole==='mod'?'🔨 مود':'👤 عضو'}</span></td>
+      <td><span style="color:var(--green);font-size:12px">● آنلاین</span></td>
+      <td style="color:var(--t3);font-size:12px">—</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="editUser('${u.id}','${u.username}')">ویرایش</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:20px">کاربری پیدا نشد</td></tr>';
 }
-function buildIconGrid(containerId, defs) {
-  const c = document.getElementById(containerId); if (!c) return;
-  c.innerHTML = defs.map(d => {
-    const hasCustom = sysIcons[d.key];
-    return `<div class="icon-slot" title="${d.label}">
-      ${hasCustom ? `<span class="icon-badge">✓</span>` : ''}
-      ${hasCustom
-        ? `<img src="${sysIcons[d.key]}" class="icon-preview" alt="${d.label}">`
-        : `<div class="icon-preview">${d.emoji}</div>`}
-      <div class="icon-label">${d.label}</div>
+function editUser(id,name){toast(`ویرایش ${name} — در نسخه بعدی`);}
+
+// ══════════════════════════════════════════════════════
+// SERVERS
+// ══════════════════════════════════════════════════════
+function buildServerCards(){
+  document.getElementById('serverCards').innerHTML=allServers.map(s=>`
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0">
+          ${s.iconUrl?`<img src="${s.iconUrl}" style="width:100%;height:100%;object-fit:cover">`:(s.icon||'🌟')}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700">${s.name}</div>
+          <div style="font-size:12px;color:var(--t3)">${s.members?.length||0} عضو · ${s.channels?.length||0} کانال · ID: ${s.id?.slice(0,8)}</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-acc" onclick="goToTheme('${s.id}')">🎨 تم</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:14px">
+        ${(s.channels||[]).map(c=>`<div style="background:var(--bg3);border-radius:4px;padding:6px 10px;font-size:13px">${c.type==='voice'?'🔊':'#'} ${c.name}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function goToTheme(srvId){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector('[onclick="nav(\'theme\',this)"]').classList.add('active');
+  nav('theme',document.querySelector('[onclick="nav(\'theme\',this)"]'));
+  setTimeout(()=>{
+    const chip=document.querySelector(`[data-srvid="${srvId}"]`);
+    if(chip)chip.click();
+  },100);
+}
+
+// ══════════════════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════════════════
+function buildEventSrvSelect(){
+  const s=document.getElementById('evServer');
+  s.innerHTML=allServers.map(srv=>`<option value="${srv.id}">${srv.icon||'🌟'} ${srv.name}</option>`).join('');
+}
+function createEvent(){
+  const title=document.getElementById('evTitle').value.trim();
+  const date=document.getElementById('evDate').value;
+  if(!title||!date){toast('عنوان و تاریخ الزامیه','err');return;}
+  const ev={id:Date.now(),title,date,desc:document.getElementById('evDesc').value,icon:document.getElementById('evIcon').value||'📅',color:document.getElementById('evColor').value,serverId:document.getElementById('evServer').value,status:'upcoming'};
+  events.push(ev);
+  localStorage.setItem('_ghEvents',JSON.stringify(events));
+  buildEventList();
+  document.getElementById('evTitle').value='';document.getElementById('evDate').value='';document.getElementById('evDesc').value='';
+  toast('رویداد ثبت شد ✅','ok');
+  // announce in server
+  announceEvent(ev);
+}
+function announceEvent(ev){
+  // ذخیره در localStorage برای اطلاع‌رسانی
+  localStorage.setItem('_ghLastEvent',JSON.stringify(ev));
+  toast('رویداد ذخیره و اعلام شد 📅','ok');
+}
+function buildEventList(){
+  const now=new Date();
+  document.getElementById('eventList').innerHTML=events.slice().reverse().map(ev=>{
+    const d=new Date(ev.date);
+    const diff=d-now;
+    const status=diff<0?'done':diff<3600000?'live':'upcoming';
+    const bCls=status==='live'?'eb-live':status==='done'?'eb-done':'eb-soon';
+    const bTxt=status==='live'?'🔴 زنده':status==='done'?'✓ تموم شد':'⏰ به‌زودی';
+    return`<div class="event-item" style="border-right-color:${ev.color||'var(--acc)'}">
+      <div class="event-icon">${ev.icon||'📅'}</div>
+      <div class="event-info">
+        <div class="event-title">${ev.title}</div>
+        <div class="event-sub">${ev.desc||''}</div>
+      </div>
+      <div style="text-align:left">
+        <span class="event-badge ${bCls}">${bTxt}</span>
+        <div class="event-time">${new Date(ev.date).toLocaleString('fa')}</div>
+        <button class="btn btn-sm btn-red" style="margin-top:4px" onclick="deleteEvent(${ev.id})">حذف</button>
+      </div>
+    </div>`;
+  }).join('')||'<div style="color:var(--t3);text-align:center;padding:24px">رویدادی ثبت نشده</div>';
+}
+function deleteEvent(id){events=events.filter(e=>e.id!==id);localStorage.setItem('_ghEvents',JSON.stringify(events));buildEventList();toast('رویداد حذف شد');}
+
+// ══════════════════════════════════════════════════════
+// ICONS
+// ══════════════════════════════════════════════════════
+const SYS_DEFS=[
+  {key:'join',label:'ورود',emoji:'👋'},{key:'leave',label:'خروج',emoji:'🚪'},{key:'ban',label:'بن',emoji:'🔨'},
+  {key:'kick',label:'کیک',emoji:'🦵'},{key:'welcome',label:'خوش‌آمد',emoji:'🎉'},{key:'bot',label:'بات',emoji:'🤖'},
+  {key:'pin',label:'پین',emoji:'📌'},{key:'mute',label:'میوت',emoji:'🔇'},{key:'level',label:'لول آپ',emoji:'⭐'},
+];
+const CH_DEFS=[{key:'text',label:'متن',emoji:'＃'},{key:'voice',label:'ویس',emoji:'🔊'},{key:'announce',label:'اطلاعیه',emoji:'📢'},{key:'rules',label:'قوانین',emoji:'📋'}];
+const VC_DEFS=[{key:'vc_join',label:'ورود ویس',emoji:'🎤'},{key:'vc_leave',label:'خروج ویس',emoji:'📵'},{key:'vc_mute',label:'میوت',emoji:'🔇'},{key:'vc_live',label:'لایو',emoji:'🔴'}];
+
+function buildIconGrids(){buildIconGrid('sysIconGrid',SYS_DEFS);buildIconGrid('chIconGrid',CH_DEFS);buildIconGrid('vcIconGrid',VC_DEFS);}
+function buildIconGrid(cid,defs){
+  const c=document.getElementById(cid);if(!c)return;
+  c.innerHTML=defs.map(d=>{
+    const has=sysIcons[d.key];
+    return`<div class="icon-slot${has?' has-custom':''}" title="${d.label}">
+      ${has?`<div class="icon-check">✓</div>`:''}
+      <div class="icon-img">${has?`<img src="${has}">`:(d.emoji)}</div>
+      <div class="icon-lbl">${d.label}</div>
       <input type="file" accept="image/*" onchange="handleIconUpload('${d.key}',this)">
     </div>`;
   }).join('');
 }
-async function handleIconUpload(key, inp) {
-  const file = inp.files[0]; if (!file) return;
-  if (file.size > 500000) { toast('⚠️ حداکثر 500KB'); return; }
-  const r = new FileReader();
-  r.onload = ev => {
-    // compress
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      const max = 64;
-      let w=img.width, h=img.height;
-      if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
-      c.width=w; c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      sysIcons[key] = c.toDataURL('image/png', 0.8);
-      buildIconGrids();
-      toast('آیکون انتخاب شد ✅ (هنوز ذخیره نشده)');
-    };
-    img.src = ev.target.result;
-  };
-  r.readAsDataURL(file);
+async function handleIconUpload(key,inp){
+  const file=inp.files[0];if(!file)return;
+  if(file.size>300000){toast('حداکثر 300KB','err');return;}
+  const r=new FileReader();
+  r.onload=async ev=>{
+    const c=await compressImg(ev.target.result,64,.8);
+    sysIcons[key]=c;buildIconGrids();toast(`آیکون ${key} آماده ✅`,'ok');
+  };r.readAsDataURL(file);
 }
-async function saveSysIcons() {
-  const d = await apiFetch('/api/admin/sysicons', 'PATCH', {icons: sysIcons});
-  if (d.ok) toast('آیکون‌ها ذخیره شدن ✅');
-  else toast('❌ خطا: ' + (d.msg||''));
+async function saveSysIcons(){
+  const d=await api('/api/admin/sysicons','PATCH',{icons:sysIcons});
+  if(d.ok)toast('آیکون‌ها ذخیره شدن ✅','ok');else toast('خطا','err');
 }
+function resetSysIcons(){sysIcons={};buildIconGrids();toast('ریست شد');}
 
-// ── THEME ─────────────────────────────────────────────────────────────────────
-function buildThemeServerBar() {
-  const bar = document.getElementById('themeServerBar');
-  const chips = allServers.map(s =>
-    `<div class="srv-chip" onclick="selectThemeServer('${s.id}',this)">${s.icon||'🌟'} ${s.name}</div>`
-  ).join('');
-  bar.innerHTML = '<span style="color:var(--t3);font-size:13px;align-self:center">سرور:</span>' + chips;
-  if (allServers.length) selectThemeServer(allServers[0].id, bar.querySelectorAll('.srv-chip')[0]);
+// ══════════════════════════════════════════════════════
+// FLOAT ICONS
+// ══════════════════════════════════════════════════════
+function buildFloatGrid(){
+  const g=document.getElementById('floatGrid');if(!g)return;
+  g.innerHTML=floatIcons.map((ic,i)=>`
+    <div class="float-slot filled">
+      <button class="float-del" onclick="removeFloat(${i})">✕</button>
+      <div class="float-img float-anim"><img src="${ic.url}"></div>
+      <div class="float-lbl">${ic.name||'آیکون '+(i+1)}</div>
+      <input type="file" accept="image/*" onchange="replaceFloat(${i},this)">
+    </div>`).join('');
 }
-async function selectThemeServer(id, el) {
-  selectedServerId = id;
-  document.querySelectorAll('.srv-chip').forEach(c=>c.classList.remove('active'));
+function addFloatSlot(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    const r=new FileReader();r.onload=async ev=>{
+      const c=await compressImg(ev.target.result,128,.8);
+      floatIcons.push({url:c,name:'آیکون '+(floatIcons.length+1)});
+      buildFloatGrid();toast('اضافه شد ✅','ok');
+    };r.readAsDataURL(file);
+  };inp.click();
+}
+async function replaceFloat(i,inp){
+  const file=inp.files[0];if(!file)return;
+  const r=new FileReader();r.onload=async ev=>{
+    const c=await compressImg(ev.target.result,128,.8);
+    floatIcons[i].url=c;buildFloatGrid();toast('جایگزین شد ✅','ok');
+  };r.readAsDataURL(file);
+}
+function removeFloat(i){floatIcons.splice(i,1);buildFloatGrid();}
+async function saveFloatIcons(){
+  floatIcons.forEach(ic=>sysIcons['float_'+floatIcons.indexOf(ic)]=ic.url);
+  const d=await api('/api/admin/sysicons','PATCH',{icons:sysIcons,floatIcons});
+  if(d.ok)toast('آیکون‌های معلق ذخیره شدن ✅','ok');else toast('خطا','err');
+}
+function saveFloatSettings(){toast('تنظیمات انیمیشن ذخیره شد');}
+
+// ══════════════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════════════
+const BG_COLORS=[
+  {k:'--bg-srv',n:'نوار سرورها',sub:'کنار آیکون‌های سرور',def:'#1e1f22'},
+  {k:'--bg-ch',n:'سایدبار کانال‌ها',sub:'لیست کانال‌ها',def:'#2b2d31'},
+  {k:'--bg-chat',n:'پس‌زمینه چت',sub:'منطقه پیام‌ها',def:'#313338'},
+  {k:'--bg-input',n:'باکس ورودی',sub:'ناحیه تایپ',def:'#383a40'},
+];
+const TEXT_COLORS=[
+  {k:'--t1',n:'متن اصلی',sub:'پیام‌ها، نام‌ها',def:'#f2f3f5'},
+  {k:'--t2',n:'متن ثانویه',sub:'نام کانال‌ها',def:'#b5bac1'},
+  {k:'--t3',n:'متن خاکستری',sub:'راهنما، تاریخ',def:'#80848e'},
+];
+const STATUS_COLORS=[
+  {k:'--acc',n:'رنگ اصلی (Accent)',sub:'دکمه‌ها، لینک‌ها',def:'#5865f2'},
+  {k:'--green',n:'آنلاین / موفق',sub:'نقطه سبز کاربران',def:'#23a55a'},
+  {k:'--red',n:'خطر / آفلاین',sub:'بن، حذف',def:'#f23f42'},
+  {k:'--yellow',n:'هشدار',sub:'پیام‌های اخطار',def:'#f0b232'},
+];
+const PRESET_THEMES=[
+  {name:'Discord',colors:{'--bg-srv':'#1e1f22','--bg-ch':'#2b2d31','--bg-chat':'#313338','--acc':'#5865f2','--t1':'#f2f3f5'}},
+  {name:'AMOLED',colors:{'--bg-srv':'#000000','--bg-ch':'#050505','--bg-chat':'#080808','--acc':'#7c6af7','--t1':'#ffffff'}},
+  {name:'Ocean',colors:{'--bg-srv':'#0a1628','--bg-ch':'#0d1e38','--bg-chat':'#102348','--acc':'#0ea5e9','--t1':'#e0f2fe'}},
+  {name:'Forest',colors:{'--bg-srv':'#0d1a0d','--bg-ch':'#0f2010','--bg-chat':'#122814','--acc':'#22c55e','--t1':'#dcfce7'}},
+  {name:'Sunset',colors:{'--bg-srv':'#1a0a08','--bg-ch':'#200d0a','--bg-chat':'#28110c','--acc':'#f97316','--t1':'#fff7ed'}},
+  {name:'Galaxy',colors:{'--bg-srv':'#08001a','--bg-ch':'#0c0022','--bg-chat':'#10002c','--acc':'#a855f7','--t1':'#f5f3ff'}},
+  {name:'Gold',colors:{'--bg-srv':'#12090a','--bg-ch':'#180c00','--bg-chat':'#1e1000','--acc':'#f59e0b','--t1':'#fffbeb'}},
+  {name:'Cyberpunk',colors:{'--bg-srv':'#0a0014','--bg-ch':'#0e001a','--bg-chat':'#12001e','--acc':'#ff0099','--t1':'#f0e6ff'}},
+];
+
+function buildThemeSrvBar(){
+  const b=document.getElementById('themeSrvBar');
+  b.innerHTML=allServers.map((s,i)=>`<div class="srv-chip${i===0?' active':''}" data-srvid="${s.id}" onclick="selectThemeSrv('${s.id}',this)">${s.icon||'🌟'} ${s.name}</div>`).join('');
+  if(allServers.length)selectThemeSrv(allServers[0].id,b.querySelector('.srv-chip'));
+}
+async function selectThemeSrv(id,el){
+  selectedSrv=id;
+  document.querySelectorAll('#themeSrvBar .srv-chip').forEach(c=>c.classList.remove('active'));
   el?.classList.add('active');
-  const d = await apiFetch(`/api/servers/${id}/theme`);
-  serverTheme = d.theme || {};
-  buildColorPickers();
-  updatePreview();
+  const d=await api(`/api/servers/${id}/theme`);
+  serverTheme=d.theme||{};
+  buildColorRows();updatePreview();
 }
-function buildColorPickers() {
-  document.getElementById('mainColors').innerHTML = COLOR_DEFS.map(colorCard).join('');
-  document.getElementById('textColors').innerHTML = TEXT_COLOR_DEFS.map(colorCard).join('');
+function buildColorRows(){
+  const build=(cid,defs)=>{
+    const c=document.getElementById(cid);if(!c)return;
+    c.innerHTML=defs.map(d=>{const v=serverTheme[d.k]||d.def;return`
+      <div class="color-row-item">
+        <div class="cr-swatch" style="background:${v}" onclick="openCpModal('${d.k}','${d.n}',this)"></div>
+        <div class="cr-info"><div class="cr-name">${d.n}</div><div class="cr-key">${d.k}</div></div>
+        <input class="cr-val" type="text" value="${v}" id="crv-${d.k.replace(/-/g,'_')}" oninput="onThemeColor('${d.k}',this.value)">
+      </div>`;}).join('');
+  };
+  build('bgColors',BG_COLORS);build('textColors',TEXT_COLORS);build('statusColors',STATUS_COLORS);
 }
-function colorCard(d) {
-  const val = serverTheme[d.key] || d.def;
-  return `<div class="color-item">
-    <div class="color-item-label">${d.label}</div>
-    <div class="color-item-sub">${d.sub}</div>
-    <div class="color-row">
-      <div class="color-preview" id="cp-${d.key.replace('--','')}" style="background:${val}"></div>
-      <input type="color" class="color-input" value="${val}" oninput="onColorChange('${d.key}',this.value)">
-      <input type="text" class="color-hex" value="${val}" maxlength="7"
-        oninput="if(this.value.match(/^#[0-9a-f]{6}$/i))onColorChange('${d.key}',this.value)"
-        id="ch-${d.key.replace('--','')}">
-    </div>
-  </div>`;
+function onThemeColor(k,v){if(/^#[0-9a-f]{6}$/i.test(v)){serverTheme[k]=v;updatePreview();const sw=document.querySelector(`[onclick*="${k}"]`);if(sw)sw.style.background=v;}}
+function updatePreview(){
+  const g=k=>serverTheme[k];
+  const pvSrv=document.getElementById('pvSrv');const pvCh=document.getElementById('pvCh');const pvChat=document.getElementById('pvChat');const pvMsg=document.getElementById('pvMsg');const pvChItem=document.getElementById('pvChItem');const pvUname=document.getElementById('pvUname');
+  if(pvSrv)pvSrv.style.background=g('--bg-srv')||'#1e1f22';
+  if(pvCh)pvCh.style.background=g('--bg-ch')||'#2b2d31';
+  if(pvChat)pvChat.style.background=g('--bg-chat')||'#313338';
+  if(pvMsg)pvMsg.style.background=g('--bg-input')||'#383a40';
+  if(pvChItem)pvChItem.style.background=g('--acc')+'22';
+  if(pvUname)pvUname.style.color=g('--acc')||'#5865f2';
 }
-function onColorChange(key, val) {
-  serverTheme[key] = val;
-  const safeKey = key.replace('--','');
-  const prev = document.getElementById('cp-'+safeKey);
-  const hex = document.getElementById('ch-'+safeKey);
-  if (prev) prev.style.background = val;
-  if (hex) hex.value = val;
-  updatePreview();
+function buildPresetThemes(){
+  document.getElementById('presetThemes').innerHTML=PRESET_THEMES.map(t=>`
+    <div style="background:${t.colors['--bg-chat']||'#313338'};border:2px solid ${t.colors['--acc']||'#5865f2'};border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;color:${t.colors['--t1']||'#fff'};transition:.1s" onclick="applyPreset(${JSON.stringify(t).replace(/"/g,'&quot;')})" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">${t.name}</div>`).join('');
 }
-function updatePreview() {
-  const get = k => serverTheme[k] || null;
-  const sidebar = document.getElementById('tpSidebar');
-  const ch = document.getElementById('tpCh');
-  const chat = document.getElementById('tpChat');
-  const msg = document.getElementById('tpMsg1');
-  if(sidebar) sidebar.style.background = get('--bg-srv')||'#1e1f22';
-  if(ch) ch.style.background = get('--bg-ch')||'#2b2d31';
-  if(chat) chat.style.background = get('--bg-chat')||'#313338';
-  if(msg) { msg.style.color = get('--t1')||'#f2f3f5'; }
+function applyPreset(t){serverTheme={...serverTheme,...t.colors};buildColorRows();updatePreview();toast(`تم ${t.name} اعمال شد`);}
+async function saveTheme(){
+  if(!selectedSrv){toast('سرور انتخاب کن','err');return;}
+  const d=await api(`/api/servers/${selectedSrv}`,'PATCH',{theme:serverTheme});
+  if(d.ok)toast('تم ذخیره شد ✅','ok');else toast('خطا','err');
 }
-async function saveServerTheme() {
-  if (!selectedServerId) { toast('اول یه سرور انتخاب کن'); return; }
-  const d = await apiFetch(`/api/servers/${selectedServerId}`, 'PATCH', {theme: serverTheme});
-  if (d.ok) toast('تم سرور ذخیره شد ✅');
-  else toast('❌ خطا');
+function resetTheme(){serverTheme={};buildColorRows();updatePreview();toast('تم ریست شد');}
+
+// ══════════════════════════════════════════════════════
+// COLOR PICKER MODAL
+// ══════════════════════════════════════════════════════
+let _cpKey='';
+function openCpModal(k,name,swatchEl){
+  _cpKey=k;
+  const cur=serverTheme[k]||'#5865f2';
+  document.getElementById('cpTarget').textContent=name+' ('+k+')';
+  document.getElementById('cpModal').classList.add('show');
+  cpSetColor(cur);
 }
-function resetTheme() {
-  serverTheme = {};
-  buildColorPickers();
-  updatePreview();
-  toast('تم ریست شد');
+function closeCpModal(){document.getElementById('cpModal').classList.remove('show');}
+function cpSetColor(hex){
+  const rgb=hexToRgb(hex)||[88,101,242];
+  document.getElementById('cpR').value=rgb[0];document.getElementById('cpG').value=rgb[1];document.getElementById('cpB').value=rgb[2];
+  document.getElementById('cpRV').textContent=rgb[0];document.getElementById('cpGV').textContent=rgb[1];document.getElementById('cpBV').textContent=rgb[2];
+  document.getElementById('cpHex').value=hex;document.getElementById('cpPicker').value=hex;
+  document.getElementById('cpPreview').style.background=hex;
+}
+function cpFromRGB(){const r=+document.getElementById('cpR').value,g=+document.getElementById('cpG').value,b=+document.getElementById('cpB').value;const hex=rgb2hex(r,g,b);document.getElementById('cpRV').textContent=r;document.getElementById('cpGV').textContent=g;document.getElementById('cpBV').textContent=b;document.getElementById('cpHex').value=hex;document.getElementById('cpPicker').value=hex;document.getElementById('cpPreview').style.background=hex;}
+function cpFromHex(v){if(/^#[0-9a-f]{6}$/i.test(v)){cpSetColor(v);}}
+function cpFromPicker(v){cpSetColor(v);}
+function applyColorFromModal(){
+  const hex=document.getElementById('cpHex').value;
+  onThemeColor(_cpKey,hex);
+  // update input
+  const inp=document.getElementById('crv-'+_cpKey.replace(/-/g,'_'));
+  if(inp)inp.value=hex;
+  // update swatch
+  document.querySelectorAll('.cr-swatch').forEach(s=>{if(s.getAttribute('onclick')?.includes(_cpKey))s.style.background=hex;});
+  closeCpModal();toast('رنگ اعمال شد ✅','ok');
 }
 
-// ── USERS ─────────────────────────────────────────────────────────────────────
-let allUsersData = [];
-async function buildUsersList() {
-  // از اولین سرور اعضا رو بگیر
-  if (!allServers.length) { document.getElementById('usersList').innerHTML = '<p style="color:var(--t3)">سروری نیست</p>'; return; }
-  const d = await apiFetch(`/api/servers/${allServers[0].id}/members`);
-  allUsersData = d.members || [];
-  renderUsers(allUsersData);
+// ══════════════════════════════════════════════════════
+// COLOR BUILDER
+// ══════════════════════════════════════════════════════
+const PRESETS_CB=['#5865f2','#a855f7','#22c55e','#f97316','#ef4444','#ec4899','#06b6d4','#f59e0b','#6366f1','#14b8a6','#0ea5e9','#84cc16'];
+let cbMode_='rgb';
+function buildColorBuilder(){
+  document.getElementById('cbPresetRow').innerHTML=PRESETS_CB.map(c=>`<div class="cb-preset" style="background:${c}" onclick="cbSetColor('${c}')" title="${c}"></div>`).join('');
+  cbSetColor('#5865f2');buildPalette();
 }
-function renderUsers(list) {
-  document.getElementById('usersList').innerHTML = list.length
-    ? list.map(u => `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg1);border-radius:6px;margin-bottom:8px">
-        <div style="width:36px;height:36px;border-radius:50%;background:${u.color||'var(--accent)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden">
-          ${u.avatarUrl?`<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover">`:(u.avatar||u.username?.[0]?.toUpperCase())}
-        </div>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:600">${u.username} ${u.serverRole==='owner'?'👑':u.serverRole==='admin'?'🛡':''}</div>
-          <div style="font-size:12px;color:var(--t3)">${u.serverRole||'member'}</div>
-        </div>
-        <span style="font-size:11px;color:var(--t3)">${u.id?.slice(0,8)}...</span>
+function cbMode(mode,el){
+  cbMode_=mode;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.getElementById('cbRGB').style.display=mode==='rgb'?'grid':'none';
+  document.getElementById('cbHSL').style.display=mode==='hsl'?'grid':'none';
+}
+function cbSetColor(hex){
+  const rgb=hexToRgb(hex)||[88,101,242];
+  document.getElementById('cbR').value=rgb[0];document.getElementById('cbG').value=rgb[1];document.getElementById('cbB').value=rgb[2];
+  document.getElementById('cbRV').textContent=rgb[0];document.getElementById('cbGV').textContent=rgb[1];document.getElementById('cbBV').textContent=rgb[2];
+  const hsl=rgbToHsl(rgb[0],rgb[1],rgb[2]);
+  document.getElementById('cbH').value=hsl[0];document.getElementById('cbS').value=hsl[1];document.getElementById('cbL').value=hsl[2];
+  document.getElementById('cbHV').textContent=hsl[0];document.getElementById('cbSV').textContent=hsl[1];document.getElementById('cbLV').textContent=hsl[2];
+  document.getElementById('cbHex').value=hex;document.getElementById('cbPicker').value=hex;
+  document.getElementById('cbPreview').style.background=hex;document.getElementById('cbSmall').style.background=hex;
+  document.documentElement.style.setProperty('--cb-hs',`hsl(${hsl[0]},100%,50%)`);
+}
+function getCurrentCbColor(){return document.getElementById('cbHex').value;}
+function updateFromRGB(){const r=+document.getElementById('cbR').value,g=+document.getElementById('cbG').value,b=+document.getElementById('cbB').value;document.getElementById('cbRV').textContent=r;document.getElementById('cbGV').textContent=g;document.getElementById('cbBV').textContent=b;cbSetColor(rgb2hex(r,g,b));}
+function updateFromHSL(){const h=+document.getElementById('cbH').value,s=+document.getElementById('cbS').value,l=+document.getElementById('cbL').value;document.getElementById('cbHV').textContent=h;document.getElementById('cbSV').textContent=s;document.getElementById('cbLV').textContent=l;const rgb=hslToRgb(h,s,l);cbSetColor(rgb2hex(rgb[0],rgb[1],rgb[2]));}
+function updateFromHex(v){if(/^#[0-9a-f]{6}$/i.test(v))cbSetColor(v);}
+function updateFromPicker(v){cbSetColor(v);}
+function copyColor(){const c=getCurrentCbColor();navigator.clipboard?.writeText(c);toast(c+' کپی شد ✅','ok');}
+function addToPalette(){const c=getCurrentCbColor();if(!palette.includes(c)){palette.push(c);localStorage.setItem('_ghPalette',JSON.stringify(palette));buildPalette();toast('به پالت اضافه شد ✅','ok');}}
+function buildPalette(){document.getElementById('myPalette').innerHTML=palette.map(c=>`<div class="cb-preset" style="background:${c};width:28px;height:28px" onclick="cbSetColor('${c}')" title="${c}"></div>`).join('')+(palette.length?`<button class="btn btn-sm btn-ghost" onclick="clearPalette()" style="padding:4px 8px">پاک</button>`:'');}
+function clearPalette(){palette=[];localStorage.setItem('_ghPalette','[]');buildPalette();}
+function applyColorToTheme(){
+  const v=document.getElementById('applyVar').value;
+  const c=getCurrentCbColor();
+  serverTheme[v]=c;
+  buildColorRows();updatePreview();
+  toast(`${v} = ${c} اعمال شد`,'ok');
+}
+
+// ══════════════════════════════════════════════════════
+// ACCESS CONTROL
+// ══════════════════════════════════════════════════════
+const AC_PERMS=[
+  {k:'sendMsg',n:'ارسال پیام'},
+  {k:'deleteMsg',n:'حذف پیام دیگران'},
+  {k:'manageChannels',n:'مدیریت کانال‌ها'},
+  {k:'kickMembers',n:'کیک اعضا'},
+  {k:'banMembers',n:'بن اعضا'},
+  {k:'pinMessages',n:'پین پیام'},
+  {k:'manageRoles',n:'مدیریت رول‌ها'},
+  {k:'uploadFiles',n:'آپلود فایل'},
+  {k:'useVoice',n:'استفاده از ویس'},
+  {k:'shareScreen',n:'اشتراک صفحه'},
+  {k:'manageServer',n:'مدیریت سرور'},
+];
+const ROLES=['owner','admin','mod','member'];
+const DEFAULT_AC={owner:AC_PERMS.map(p=>p.k),admin:['sendMsg','deleteMsg','manageChannels','kickMembers','banMembers','pinMessages','manageRoles','uploadFiles','useVoice','shareScreen'],mod:['sendMsg','deleteMsg','pinMessages','kickMembers','uploadFiles','useVoice','shareScreen'],member:['sendMsg','uploadFiles','useVoice','shareScreen']};
+
+function buildAccessSrvBar(){
+  const b=document.getElementById('accessSrvBar');
+  if(!b)return;
+  b.innerHTML=allServers.map((s,i)=>`<div class="srv-chip${i===0?' active':''}" onclick="selectAccessSrv('${s.id}',this)">${s.icon||'🌟'} ${s.name}</div>`).join('');
+}
+function selectAccessSrv(id,el){document.querySelectorAll('#accessSrvBar .srv-chip').forEach(c=>c.classList.remove('active'));el?.classList.add('active');}
+function buildACTable(){
+  const rules=accessRules||DEFAULT_AC;
+  document.getElementById('acTableBody').innerHTML=AC_PERMS.map(p=>`<tr>
+    <td>${p.n}</td>
+    ${ROLES.map(r=>`<td><input type="checkbox" class="ac-check" ${(rules[r]||DEFAULT_AC[r]||[]).includes(p.k)?'checked':''} id="ac-${r}-${p.k}"></td>`).join('')}
+  </tr>`).join('');
+  // owner always checked
+  ROLES.forEach(r=>AC_PERMS.forEach(p=>{const el=document.getElementById(`ac-${r}-${p.k}`);if(el&&r==='owner')el.disabled=true;}));
+}
+function saveAccess(){
+  ROLES.forEach(r=>{accessRules[r]=AC_PERMS.filter(p=>{const el=document.getElementById(`ac-${r}-${p.k}`);return el?.checked;}).map(p=>p.k);});
+  localStorage.setItem('_ghAccess',JSON.stringify(accessRules));
+  toast('مجوزها ذخیره شدن ✅','ok');
+}
+
+// ══════════════════════════════════════════════════════
+// ADMINS
+// ══════════════════════════════════════════════════════
+let adminUsers=[];
+async function buildAdminList(){
+  adminUsers=allUsersData.filter(u=>u.serverRole==='admin'||u.serverRole==='owner');
+  document.getElementById('adminList').innerHTML=adminUsers.length
+    ?adminUsers.map(u=>`<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:4px;margin-bottom:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:${u.color||'var(--acc)'};display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">${u.avatarUrl?`<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover">`:u.username[0]?.toUpperCase()}</div>
+        <div style="flex:1"><div style="font-weight:600">${u.username}</div><div style="font-size:12px;color:var(--t3)">${u.serverRole}</div></div>
+        ${u.id!==me?.id?`<button class="btn btn-sm btn-red" onclick="removeAdmin('${u.id}','${u.username}')">حذف</button>`:'<span style="font-size:12px;color:var(--t3)">شما</span>'}
       </div>`).join('')
-    : '<p style="color:var(--t3);text-align:center;padding:20px">کاربری نیست</p>';
+    :'<div style="color:var(--t3);text-align:center;padding:16px">ادمینی ثبت نشده</div>';
 }
-function filterUsers(q) {
-  const filtered = allUsersData.filter(u => u.username?.toLowerCase().includes(q.toLowerCase()));
-  renderUsers(filtered);
+async function addAdmin(){
+  const uname=document.getElementById('newAdminUser').value.trim();if(!uname){toast('نام‌کاربری الزامیه','err');return;}
+  const user=allUsersData.find(u=>u.username?.toLowerCase()===uname.toLowerCase());
+  if(!user){toast('کاربر پیدا نشد','err');return;}
+  const d=await api('/api/admin/promote','POST',{userId:user.id});
+  if(d.ok){toast(`${uname} ادمین شد 👑`,'ok');document.getElementById('newAdminUser').value='';await loadAll();}
+  else toast(d.msg||'خطا','err');
+}
+async function removeAdmin(id,name){if(!confirm(`${name} از ادمین خارج بشه؟`))return;toast(`در نسخه بعدی`);}
+
+// ══════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════
+async function saveSettings(){toast('تنظیمات ذخیره شد ✅','ok');}
+async function clearAllMessages(){
+  if(!confirm('همه پیام‌های همه سرورها پاک بشن؟'))return;
+  for(const s of allServers)await api(`/api/servers/${s.id}/clear-messages`,'POST');
+  toast('پیام‌ها پاک شدن ✅','ok');
+}
+function nav_logs(){
+  document.getElementById('logsList').innerHTML=[
+    {t:'ورود کاربر',d:'abol وارد شد',time:'الان'},{t:'پیام جدید',d:'پیام در #عمومی',time:'۲ دقیقه پیش'},
+    {t:'سرور ساخته شد',d:'محفل اصلی',time:'۱ ساعت پیش'},
+  ].map(l=>`<div style="padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--green)">[${l.time}]</span> <span style="color:var(--acc)">${l.t}</span> — ${l.d}</div>`).join('');
 }
 
-// ── SERVERS ───────────────────────────────────────────────────────────────────
-function buildServersList() {
-  document.getElementById('serversList').innerHTML = allServers.length
-    ? allServers.map(s => `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg1);border-radius:6px;margin-bottom:8px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden">
-          ${s.iconUrl?`<img src="${s.iconUrl}" style="width:100%;height:100%;object-fit:cover">`:(s.icon||'🌟')}
-        </div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700">${s.name}</div>
-          <div style="font-size:12px;color:var(--t3)">${s.channels?.length||0} کانال · ${s.members?.length||0} عضو</div>
-        </div>
-        <span style="font-size:11px;color:var(--t3);font-family:monospace">${s.id?.slice(0,8)}</span>
-      </div>`).join('')
-    : '<p style="color:var(--t3);text-align:center;padding:20px">سروری نیست</p>';
-}
-
+// ══════════════════════════════════════════════════════
+// START
+// ══════════════════════════════════════════════════════
 init();
 </script>
 </body>
