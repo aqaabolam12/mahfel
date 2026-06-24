@@ -1809,7 +1809,12 @@ function stopWatchingScreen() {
 
 async function createScreenPC(toSocketId, asOfferer) {
   const pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    ]
   });
   screenPCs[toSocketId] = pc;
 
@@ -1973,8 +1978,9 @@ function renderMsgContent(msg) {
   html = renderMentions(html);
 
   // فایل / تصویر پیوست
-  if (msg.file) {
-    const { data, name, type } = msg.file;
+  const fileObj = msg.file || (msg.fileData ? {data: msg.fileData, name: msg.fileName, type: msg.fileType} : null);
+  if (fileObj) {
+    const { data, name, type } = fileObj;
     if (type && type.startsWith('image/')) {
       html += `<br><img class="msg-img" src="${data}" alt="${esc(name)}" loading="lazy" style="max-width:360px;max-height:300px;border-radius:8px;margin-top:6px;cursor:pointer" onclick="openImgModal('${data}')">`;
     } else {
@@ -2439,13 +2445,15 @@ function updateVoiceEffectUI(effectName) {
 
 // ─── inject HTML elements جدید ───────────────────────────────────────
 function injectPatchedHTML() {
+  try {
   // Reply bar بالای input
   const inputArea = document.querySelector('.input-area');
   if (inputArea && !document.getElementById('replyBar')) {
     const bar = document.createElement('div');
     bar.id = 'replyBar';
     bar.className = 'reply-bar hidden';
-    inputArea.insertBefore(bar, inputArea.firstChild);
+    if (inputArea.firstChild) inputArea.insertBefore(bar, inputArea.firstChild);
+    else inputArea.appendChild(bar);
   }
 
   // دکمه‌های جدید در input area
@@ -2460,7 +2468,8 @@ function injectPatchedHTML() {
     fileInput.id = 'chatFileInput';
     fileInput.accept = 'image/*,video/*,audio/*,.pdf,.zip,.txt,.doc,.docx';
     fileInput.style.display = 'none';
-    inputArea.insertBefore(fileBtn, inputArea.querySelector('.msg-input'));
+    const _mi = inputArea.querySelector('.msg-input');
+    if (_mi) inputArea.insertBefore(fileBtn, _mi); else inputArea.appendChild(fileBtn);
     inputArea.appendChild(fileInput);
 
     // دکمه جستجو
@@ -2469,7 +2478,8 @@ function injectPatchedHTML() {
     searchBtn.title = 'جستجو';
     searchBtn.textContent = '🔍';
     searchBtn.onclick = toggleSearch;
-    inputArea.insertBefore(searchBtn, inputArea.querySelector('.send-btn'));
+    const _sb = inputArea.querySelector('.send-btn');
+    if (_sb) inputArea.insertBefore(searchBtn, _sb); else inputArea.appendChild(searchBtn);
   }
 
   // Voice effect selector در ویس ویو
@@ -2478,7 +2488,7 @@ function injectPatchedHTML() {
     const sel = document.createElement('div');
     sel.id = 'voiceEffectSelector';
     sel.className = 'voice-effect-row';
-    vcPanel.insertBefore(sel, vcPanel.firstChild);
+    if (vcPanel.firstChild) vcPanel.insertBefore(sel, vcPanel.firstChild); else vcPanel.appendChild(sel);
     buildVoiceEffectSelector();
   }
 
@@ -2497,6 +2507,7 @@ function injectPatchedHTML() {
     document.body.appendChild(modal);
     buildFullThemePicker();
   }
+  } catch(e) { console.warn('injectPatchedHTML error:', e); }
 }
 
 // ─── scroll to msg ────────────────────────────────────────────────────
