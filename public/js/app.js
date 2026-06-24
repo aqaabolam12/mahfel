@@ -372,14 +372,20 @@ function connectSocket(){
 
   // Screen share signaling
   socket.on('screen_share_started',async({userId,username,socketId})=>{
-    showToast(`🖥 ${username} داره صفحه‌ش رو نشون میده`);
-    setText('ssUsername',`🖥 ${username}`);
-    $('screenShareArea')?.classList.remove('hidden');
-    $('vcScreenGrid')?.classList.remove('hidden');
-    $('voiceView')?.classList.add('has-share');
-    // Create PC to receive
-    const pc=await createScreenPC(socketId,false);
-    socket.emit('screen_request',{to:socketId});
+    if(userId===me?.id)return;
+    showToast(`🖥 ${username} داره شیر میده`);
+    const _t=document.createElement('div');
+    _t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#5865f2;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;z-index:9999;font-size:14px';
+    _t.textContent=`🖥 ${username} داره شیر میده — کلیک کن ببینی`;
+    _t.onclick=async()=>{
+      _t.remove();
+      $('vcScreenGrid')?.classList.remove('hidden');
+      $('voiceView')?.classList.add('has-share');
+      const pc=await createScreenPC(socketId,false);
+      socket.emit('screen_request',{to:socketId});
+    };
+    document.body.appendChild(_t);
+    setTimeout(()=>_t.remove(),15000);
   });
   socket.on('screen_share_stopped',()=>{
     $('vcScreenGrid')?.classList.add('hidden');
@@ -420,26 +426,31 @@ const SAMPLE_RATE = 24000;
 const BUFFER_SIZE = 2048;
 
 function newPC(sid, uid) {
-  // Stub - kept for compatibility but not used
   socketUserMap[sid] = uid;
-  return { 
-    addTrack:()=>{}, 
-    createOffer:()=>Promise.resolve({}),
-    createAnswer:()=>Promise.resolve({}),
-    setLocalDescription:()=>Promise.resolve(),
-    setRemoteDescription:()=>Promise.resolve(),
-    addIceCandidate:()=>Promise.resolve(),
-    close:()=>{},
-    getSenders:()=>[],
-    connectionState:'connected',
-    iceConnectionState:'connected',
-    signalingState:'stable',
-    restartIce:()=>{},
-    onicecandidate:null,
-    ontrack:null,
-    onconnectionstatechange:null,
-    oniceconnectionstatechange:null,
+  const ICE = [
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+  ];
+  const pc = new RTCPeerConnection({iceServers:ICE, bundlePolicy:'max-bundle'});
+  peerConnections[sid] = pc;
+  pc.onicecandidate = e => {
+    if(e.candidate) socket.emit('rtc_candidate',{to:sid,candidate:e.candidate});
   };
+  pc.ontrack = e => {
+    if(isDeafened) return;
+    const stream = e.streams[0]; if(!stream) return;
+    const vol = localMutes[uid] ? 0 : (localVolumes[uid]??1);
+    let audio = peerAudios[sid];
+    if(!audio){
+      audio = new Audio(); audio.autoplay=true; audio.dataset.userId=uid; audio.volume=vol;
+      document.body.appendChild(audio); peerAudios[sid]=audio;
+    }
+    audio.srcObject=stream; audio.play().catch(()=>{});
+  };
+  return pc;
 }
 
 function startAudioRelay() {
@@ -1809,12 +1820,7 @@ function stopWatchingScreen() {
 
 async function createScreenPC(toSocketId, asOfferer) {
   const pc = new RTCPeerConnection({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    ]
+    iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},{urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'}]
   });
   screenPCs[toSocketId] = pc;
 
@@ -1978,9 +1984,9 @@ function renderMsgContent(msg) {
   html = renderMentions(html);
 
   // فایل / تصویر پیوست
-  const fileObj = msg.file || (msg.fileData ? {data: msg.fileData, name: msg.fileName, type: msg.fileType} : null);
-  if (fileObj) {
-    const { data, name, type } = fileObj;
+  const _fo=msg.file||(msg.fileData?{data:msg.fileData,name:msg.fileName,type:msg.fileType}:null);
+  if (_fo) {
+    const { data, name, type } = _fo;
     if (type && type.startsWith('image/')) {
       html += `<br><img class="msg-img" src="${data}" alt="${esc(name)}" loading="lazy" style="max-width:360px;max-height:300px;border-radius:8px;margin-top:6px;cursor:pointer" onclick="openImgModal('${data}')">`;
     } else {
@@ -2445,15 +2451,13 @@ function updateVoiceEffectUI(effectName) {
 
 // ─── inject HTML elements جدید ───────────────────────────────────────
 function injectPatchedHTML() {
-  try {
   // Reply bar بالای input
   const inputArea = document.querySelector('.input-area');
   if (inputArea && !document.getElementById('replyBar')) {
     const bar = document.createElement('div');
     bar.id = 'replyBar';
     bar.className = 'reply-bar hidden';
-    if (inputArea.firstChild) inputArea.insertBefore(bar, inputArea.firstChild);
-    else inputArea.appendChild(bar);
+    if(inputArea.firstChild)inputArea.insertBefore(bar,inputArea.firstChild);else inputArea.appendChild(bar);
   }
 
   // دکمه‌های جدید در input area
@@ -2468,8 +2472,7 @@ function injectPatchedHTML() {
     fileInput.id = 'chatFileInput';
     fileInput.accept = 'image/*,video/*,audio/*,.pdf,.zip,.txt,.doc,.docx';
     fileInput.style.display = 'none';
-    const _mi = inputArea.querySelector('.msg-input');
-    if (_mi) inputArea.insertBefore(fileBtn, _mi); else inputArea.appendChild(fileBtn);
+    const _mi=inputArea.querySelector('.msg-input');if(_mi)inputArea.insertBefore(fileBtn,_mi);else inputArea.appendChild(fileBtn);
     inputArea.appendChild(fileInput);
 
     // دکمه جستجو
@@ -2478,8 +2481,7 @@ function injectPatchedHTML() {
     searchBtn.title = 'جستجو';
     searchBtn.textContent = '🔍';
     searchBtn.onclick = toggleSearch;
-    const _sb = inputArea.querySelector('.send-btn');
-    if (_sb) inputArea.insertBefore(searchBtn, _sb); else inputArea.appendChild(searchBtn);
+    const _sb=inputArea.querySelector('.send-btn');if(_sb)inputArea.insertBefore(searchBtn,_sb);else inputArea.appendChild(searchBtn);
   }
 
   // Voice effect selector در ویس ویو
@@ -2488,7 +2490,7 @@ function injectPatchedHTML() {
     const sel = document.createElement('div');
     sel.id = 'voiceEffectSelector';
     sel.className = 'voice-effect-row';
-    if (vcPanel.firstChild) vcPanel.insertBefore(sel, vcPanel.firstChild); else vcPanel.appendChild(sel);
+    if(vcPanel.firstChild)vcPanel.insertBefore(sel,vcPanel.firstChild);else vcPanel.appendChild(sel);
     buildVoiceEffectSelector();
   }
 
@@ -2507,7 +2509,6 @@ function injectPatchedHTML() {
     document.body.appendChild(modal);
     buildFullThemePicker();
   }
-  } catch(e) { console.warn('injectPatchedHTML error:', e); }
 }
 
 // ─── scroll to msg ────────────────────────────────────────────────────
