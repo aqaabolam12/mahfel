@@ -224,16 +224,77 @@ function patchScreenShare(){
 
 function showSSOverlay(stream,isOwner){
   document.getElementById('_ssOv')?.remove();
+  document.getElementById('_ssMini')?.remove();
+
+  let isMini=false;
   const ov=document.createElement('div');ov.id='_ssOv';
+  ov.style.cssText='position:fixed;inset:0;background:#000e;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;';
+
   const vid=document.createElement('video');
   vid.srcObject=stream;vid.autoplay=true;vid.playsInline=true;vid.muted=isOwner;
-  const bar=document.createElement('div');bar.className='ss-bar';
-  bar.innerHTML=isOwner
-    ?`<span style="color:#fff;font-size:14px">🖥 در حال اشتراک صفحه</span><button class="ss-btn" style="background:#f23f42;color:#fff" onclick="window.stopScreenShare?.()">⏹ توقف</button>`
-    :`<span style="color:#fff;font-size:14px">👁 در حال تماشا</span><button class="ss-btn" style="background:#383a40;color:#fff" onclick="document.getElementById('_ssOv')?.remove()">✕ بستن</button>`;
+  vid.style.cssText='max-width:94vw;max-height:82vh;border-radius:8px;background:#000;';
+
+  // viewers counter
+  window.__ssViewers=window.__ssViewers||new Set();
+  if(!isOwner) window.__ssViewers.add('me');
+
+  const bar=document.createElement('div');
+  bar.style.cssText='display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.8);padding:10px 20px;border-radius:12px;flex-wrap:wrap;justify-content:center;';
+
+  const viewerSpan=document.createElement('span');
+  viewerSpan.id='_ssViewSpan';
+  viewerSpan.style.cssText='color:#aaa;font-size:13px;';
+  viewerSpan.textContent=isOwner?`👁 ${window.__ssViewers.size} بیننده`:'';
+
+  // mini toggle
+  const toggleBtn=document.createElement('button');
+  toggleBtn.textContent='⛶ کوچک/بزرگ';
+  toggleBtn.style.cssText='padding:8px 16px;border:none;border-radius:6px;cursor:pointer;background:#383a40;color:#fff;font-size:14px;font-family:inherit;';
+  toggleBtn.onclick=()=>{
+    isMini=!isMini;
+    if(isMini){
+      ov.style.cssText='position:fixed;bottom:20px;right:20px;width:300px;height:180px;z-index:9999;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px #000;';
+      vid.style.cssText='width:100%;height:100%;object-fit:cover;';
+      bar.style.display='none';
+    } else {
+      ov.style.cssText='position:fixed;inset:0;background:#000e;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;';
+      vid.style.cssText='max-width:94vw;max-height:82vh;border-radius:8px;background:#000;';
+      bar.style.display='flex';
+    }
+  };
+  // double click to toggle
+  vid.ondblclick=()=>toggleBtn.onclick();
+
+  if(isOwner){
+    const stopBtn=document.createElement('button');
+    stopBtn.textContent='⏹ توقف';
+    stopBtn.style.cssText='padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;background:#f23f42;color:#fff;';
+    stopBtn.onclick=()=>window.stopScreenShare?.();
+    bar.appendChild(document.createElement('span')).textContent='🖥 در حال اشتراک صفحه';
+    bar.lastChild.style.cssText='color:#fff;font-size:14px;';
+    bar.appendChild(viewerSpan);
+    bar.appendChild(toggleBtn);
+    bar.appendChild(stopBtn);
+  } else {
+    const closeBtn=document.createElement('button');
+    closeBtn.textContent='✕ بستن';
+    closeBtn.style.cssText='padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;background:#383a40;color:#fff;';
+    closeBtn.onclick=()=>{ov.remove();};
+    const lbl=document.createElement('span');
+    lbl.textContent='👁 در حال تماشا';lbl.style.cssText='color:#fff;font-size:14px;';
+    bar.appendChild(lbl);
+    bar.appendChild(toggleBtn);
+    bar.appendChild(closeBtn);
+  }
+
   ov.appendChild(vid);ov.appendChild(bar);
   document.body.appendChild(ov);
   vid.play().catch(()=>{});
+
+  // update viewer count برای owner
+  if(!isOwner){
+    socket?.emit?.('ss_viewer_join',{});
+  }
 }
 
 // ── appendMessage ─────────────────────────────────────────────
