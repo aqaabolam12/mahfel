@@ -228,12 +228,12 @@
   <div class="modal wide" dir="rtl">
     <div class="m-title" style="margin-bottom:12px">⚙ تنظیمات سرور — <span id="srvSettingsName" style="color:var(--accent)"></span></div>
     <div class="stabs">
-      <button class="stab active" onclick="switchStab('overview',this)">کلی</button>
-      <button class="stab" onclick="switchStab('roles',this)">رول‌ها</button>
-      <button class="stab" onclick="switchStab('members',this)">اعضا</button>
-      <button class="stab" onclick="switchStab('channels',this)">کانال‌ها</button>
-      <button class="stab" onclick="switchStab('invite',this)">دعوت</button>
-      <button class="stab" onclick="switchStab('danger',this)">خطر</button>
+      <button class="stab active" onclick="switchStab(this,'overview')">کلی</button>
+      <button class="stab" onclick="switchStab(this,'roles')">رول‌ها</button>
+      <button class="stab" onclick="switchStab(this,'members')">اعضا</button>
+      <button class="stab" onclick="switchStab(this,'channels')">کانال‌ها</button>
+      <button class="stab" onclick="switchStab(this,'invite')">دعوت</button>
+      <button class="stab" onclick="switchStab(this,'danger')">خطر</button>
     </div>
     <div id="stab-overview" class="stab-content">
       <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
@@ -328,6 +328,7 @@
       <button class="ch-type-btn" id="chTypeVoice" onclick="selectChType('voice')">🔊 ویس</button>
     </div>
     <input id="newChName" class="auth-input" placeholder="اسم کانال">
+    <input type="hidden" id="newChType" value="text">
     <div class="m-actions">
       <button class="auth-btn" onclick="addChannel()">ساخت کانال</button>
       <button class="m-cancel" onclick="closeModal('addChannelModal')">لغو</button>
@@ -451,10 +452,22 @@
   </div>
 </div>
 
+
+  <!-- Hidden inputs required by app.js -->
+  <input type="hidden" id="ctxUserId">
+  <input type="hidden" id="ctxUserRole">
+  <select id="roleSelect" style="display:none">
+    <option value="member">member</option>
+    <option value="mod">mod</option>
+    <option value="admin">admin</option>
+  </select>
+  <div id="ctxAvatar" style="display:none"></div>
+
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/app.js"></script>
+<script src="/js/fix_patch.js"></script>
 </body>
 </html>

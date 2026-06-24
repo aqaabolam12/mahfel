@@ -409,3 +409,20 @@ body{font-family:'Vazirmatn',-apple-system,BlinkMacSystemFont,sans-serif;backgro
 .energy-wave{position:absolute;inset:0;background:radial-gradient(circle at center,rgba(88,101,242,.05) 0%,transparent 70%);animation:waveAnim 4s ease-in-out infinite;}
 .energy-wave:nth-child(2){animation-delay:2s;}
 @keyframes waveAnim{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.05);opacity:1}}
+
+/* ── MISSING CLASSES FROM APP.JS ─── */
+.ml-user{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:4px;transition:.1s;}
+.ml-user:hover{background:var(--bg-4);}
+.ml-uname{font-size:14px;font-weight:500;color:var(--text-1);}
+.ml-section-title{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;padding:12px 8px 4px;}
+.ch-label{display:flex;align-items:center;padding:4px 8px 2px 16px;color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;cursor:pointer;}
+.ch-add-btn{margin-right:auto;background:none;border:none;color:var(--text-3);font-size:16px;cursor:pointer;padding:0 4px;}
+.ch-add-btn:hover{color:var(--text-1);}
+.srv-ch-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-1);border-radius:4px;font-size:14px;}
+.vu-item{display:flex;align-items:center;gap:8px;padding:2px 8px 2px 36px;color:var(--text-3);font-size:13px;}
+.vu-avatar{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;}
+.bot-embed{display:flex;align-items:center;gap:12px;background:var(--bg-2);border-radius:8px;padding:12px;margin-top:8px;border-right:4px solid var(--accent);}
+.bot-embed-art{font-size:32px;}
+.bot-embed-title{font-size:14px;font-weight:700;}
+.bot-embed-sub{font-size:12px;color:var(--text-3);}
+.bot-embed-btn{background:var(--accent);border:none;color:#fff;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:13px;}
