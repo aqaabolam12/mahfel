@@ -494,18 +494,88 @@ io.on('connection', socket => {
   io.emit('user_online', sanitize(user));
 
   // ── Text message ─────────────────────────────────────────────────────────
-  socket.on('message', ({ channelId, text }) => {
+  socket.on('message', ({ channelId, text, replyTo }) => {
     if (!text?.trim()) return;
     const msg = {
       id: uuidv4(), userId: socket.userId,
       username: user.username, avatar: user.avatar, color: user.color,
+      avatarUrl: user.avatarUrl || null,
       text: text.trim(), time: new Date().toISOString(),
+      replyTo: replyTo || null,
     };
     if (!db.messages[channelId]) db.messages[channelId] = [];
     db.messages[channelId].push(msg);
     if (db.messages[channelId].length > 200) db.messages[channelId] = db.messages[channelId].slice(-200);
     saveDB();
     io.to(`channel:${channelId}`).emit('message', { channelId, msg });
+  });
+
+  // ── File / Image message ──────────────────────────────────────────────────
+  socket.on('file_message', ({ channelId, fileData, fileName, fileType, text }) => {
+    if (!channelId || !fileData) return;
+    // حداکثر 8MB
+    if (fileData.length > 11000000) {
+      socket.emit('error_msg', { text: '❌ فایل خیلی بزرگه (حداکثر 8MB)' });
+      return;
+    }
+    const msg = {
+      id: uuidv4(), userId: socket.userId,
+      username: user.username, avatar: user.avatar, color: user.color,
+      avatarUrl: user.avatarUrl || null,
+      text: text?.trim() || '',
+      fileData, fileName, fileType,
+      time: new Date().toISOString(),
+    };
+    if (!db.messages[channelId]) db.messages[channelId] = [];
+    db.messages[channelId].push(msg);
+    if (db.messages[channelId].length > 200) db.messages[channelId] = db.messages[channelId].slice(-200);
+    saveDB();
+    io.to(`channel:${channelId}`).emit('message', { channelId, msg });
+  });
+
+  // ── Edit message ──────────────────────────────────────────────────────────
+  socket.on('edit_message', ({ channelId, msgId, newText }) => {
+    if (!newText?.trim()) return;
+    const msgs = db.messages[channelId];
+    if (!msgs) return;
+    const msg = msgs.find(m => m.id === msgId);
+    if (!msg || msg.userId !== socket.userId) return;
+    msg.text = newText.trim();
+    msg.edited = true;
+    saveDB();
+    io.to(`channel:${channelId}`).emit('message_edited', { channelId, msgId, newText: msg.text });
+  });
+
+  // ── Delete message ────────────────────────────────────────────────────────
+  socket.on('delete_message', ({ channelId, msgId }) => {
+    const msgs = db.messages[channelId];
+    if (!msgs) return;
+    const idx = msgs.findIndex(m => m.id === msgId);
+    if (idx === -1) return;
+    const msg = msgs[idx];
+    // فقط صاحب پیام یا ادمین/مود سرور
+    const ch = Object.values(db.servers).flatMap(s => s.channels).find(c => c.id === channelId);
+    const serverId = ch?.serverId;
+    if (msg.userId !== socket.userId && !canModerate(serverId, socket.userId)) return;
+    msgs.splice(idx, 1);
+    saveDB();
+    io.to(`channel:${channelId}`).emit('message_deleted', { channelId, msgId });
+  });
+
+  // ── React ─────────────────────────────────────────────────────────────────
+  socket.on('react', ({ channelId, msgId, emoji }) => {
+    const msgs = db.messages[channelId];
+    if (!msgs) return;
+    const msg = msgs.find(m => m.id === msgId);
+    if (!msg) return;
+    if (!msg.reactions) msg.reactions = {};
+    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+    const i = msg.reactions[emoji].indexOf(socket.userId);
+    if (i === -1) msg.reactions[emoji].push(socket.userId);
+    else msg.reactions[emoji].splice(i, 1);
+    if (!msg.reactions[emoji].length) delete msg.reactions[emoji];
+    saveDB();
+    io.to(`channel:${channelId}`).emit('reaction_update', { channelId, msgId, reactions: msg.reactions });
   });
 
   socket.on('join_channel', ({ channelId }) => {
@@ -591,6 +661,21 @@ io.on('connection', socket => {
   socket.on('rtc_offer',     ({ to, offer })     => io.to(to).emit('rtc_offer',     { from: socket.id, offer }));
   socket.on('rtc_answer',    ({ to, answer })    => io.to(to).emit('rtc_answer',    { from: socket.id, answer }));
   socket.on('rtc_candidate', ({ to, candidate }) => io.to(to).emit('rtc_candidate', { from: socket.id, candidate }));
+
+  // ── ICE Servers (TURN + STUN) ─────────────────────────────────────────────
+  socket.on('get_ice_servers', () => {
+    socket.emit('ice_servers', {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        // TURN سرور رایگان (برای ایران مناسبتره)
+        { urls: 'turn:openrelay.metered.ca:80',     username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443',    username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+      ]
+    });
+  });
 
   // Typing
   socket.on('typing', ({ channelId }) => {
