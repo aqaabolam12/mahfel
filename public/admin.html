@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GapHub Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg1:#1e1f22;--bg2:#2b2d31;--bg3:#313338;--bg4:#383a40;--bg5:#404249;
+  --accent:#5865f2;--green:#23a55a;--red:#f23f42;
+  --t1:#f2f3f5;--t2:#b5bac1;--t3:#80848e;
+  --border:rgba(255,255,255,.06);
+}
+body{font-family:'Vazirmatn',sans-serif;background:var(--bg1);color:var(--t1);min-height:100vh;direction:rtl;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;}
+.topbar-logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#5865f2,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.topbar-sub{color:var(--t3);font-size:13px;}
+.topbar-user{margin-right:auto;display:flex;align-items:center;gap:8px;font-size:14px;}
+.layout{display:flex;min-height:calc(100vh - 56px);}
+.sidebar{width:220px;background:var(--bg2);border-left:1px solid var(--border);padding:16px 8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;color:var(--t2);font-size:14px;transition:.1s;margin-bottom:2px;}
+.nav-item:hover{background:var(--bg4);color:var(--t1);}
+.nav-item.active{background:rgba(88,101,242,.2);color:var(--accent);}
+.nav-icon{font-size:18px;width:22px;text-align:center;}
+.content{flex:1;padding:32px;}
+.page{display:none;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{font-size:22px;font-weight:700;margin-bottom:6px;}
+.page-sub{color:var(--t3);font-size:14px;margin-bottom:28px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.label{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.input{width:100%;padding:10px 12px;background:var(--bg1);border:1px solid var(--bg5);border-radius:4px;color:var(--t1);font-family:inherit;font-size:14px;outline:none;margin-bottom:12px;}
+.input:focus{border-color:var(--accent);}
+.btn{padding:10px 20px;background:var(--accent);border:none;border-radius:4px;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+.btn:hover{opacity:.9;}
+.btn.danger{background:var(--red);}
+.btn.ghost{background:var(--bg4);color:var(--t2);}
+.btn.sm{padding:6px 14px;font-size:13px;}
+
+/* icon grid */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+.icon-slot{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:.15s;position:relative;}
+.icon-slot:hover{border-color:var(--accent);}
+.icon-slot img,.icon-slot .icon-preview{width:48px;height:48px;border-radius:8px;object-fit:cover;margin:0 auto 8px;display:block;}
+.icon-slot .icon-preview{background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.icon-label{font-size:12px;color:var(--t3);}
+.icon-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.icon-badge{position:absolute;top:6px;left:6px;background:var(--green);border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;}
+
+/* color picker grid */
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.color-item{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.color-item-label{font-size:13px;font-weight:600;margin-bottom:8px;}
+.color-item-sub{font-size:11px;color:var(--t3);margin-bottom:10px;}
+.color-row{display:flex;align-items:center;gap:8px;}
+.color-preview{width:36px;height:36px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;}
+.color-input{background:none;border:none;cursor:pointer;width:36px;height:36px;padding:0;border-radius:4px;}
+.color-hex{flex:1;padding:6px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;color:var(--t1);font-family:monospace;font-size:13px;outline:none;}
+
+/* server select */
+.server-select-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.srv-chip{padding:6px 14px;background:var(--bg4);border:1px solid var(--border);border-radius:16px;cursor:pointer;font-size:13px;color:var(--t2);transition:.1s;}
+.srv-chip:hover{border-color:var(--accent);color:var(--t1);}
+.srv-chip.active{background:rgba(88,101,242,.2);border-color:var(--accent);color:var(--accent);}
+
+/* theme preview */
+.theme-preview{border-radius:8px;overflow:hidden;border:1px solid var(--border);height:160px;display:flex;position:relative;margin-top:16px;}
+.tp-sidebar{width:60px;display:flex;flex-direction:column;padding:8px 0;}
+.tp-ch{width:160px;padding:8px;}
+.tp-chat{flex:1;padding:8px;}
+.tp-msg{border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:11px;}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg5);color:var(--t1);padding:12px 20px;border-radius:6px;font-size:14px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;box-shadow:0 4px 16px #0006;}
+.toast.show{opacity:1;}
+.not-admin{text-align:center;padding:80px 20px;color:var(--t3);}
+.not-admin h2{font-size:28px;margin-bottom:12px;color:var(--t1);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">⚙️ GapHub Admin</span>
+  <span class="topbar-sub">پنل مدیریت</span>
+  <div class="topbar-user">
+    <div id="adminUserAvatar" style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700"></div>
+    <span id="adminUserName">—</span>
+    <a href="/" style="color:var(--t3);font-size:13px;text-decoration:none;margin-right:8px">← برگشت به سایت</a>
+  </div>
+</div>
+
+<div id="notAdmin" class="not-admin hidden">
+  <h2>🔒 دسترسی نداری</h2>
+  <p>این پنل فقط برای ادمین کل سیستم هست.</p>
+  <p style="margin-top:8px;font-size:13px">اولین کاربر ثبت‌نام‌شده به‌صورت خودکار ادمین می‌شه.</p>
+  <a href="/" style="display:inline-block;margin-top:20px;padding:10px 24px;background:var(--accent);color:#fff;border-radius:4px;text-decoration:none">برگشت</a>
+</div>
+
+<div class="layout" id="adminLayout" style="display:none">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-item active" data-page="icons" onclick="showPage('icons',this)">
+      <span class="nav-icon">🎨</span> آیکون‌های سیستم
+    </div>
+    <div class="nav-item" data-page="theme" onclick="showPage('theme',this)">
+      <span class="nav-icon">🖌️</span> تم‌ساز سرور
+    </div>
+    <div class="nav-item" data-page="users" onclick="showPage('users',this)">
+      <span class="nav-icon">👥</span> کاربران
+    </div>
+    <div class="nav-item" data-page="servers" onclick="showPage('servers',this)">
+      <span class="nav-icon">🌐</span> سرورها
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- PAGE: Icons -->
+    <div class="page active" id="page-icons">
+      <h2>🎨 آیکون‌های سیستم</h2>
+      <p class="page-sub">آیکون‌های پیش‌فرض سایت رو با تصویر دلخواهت عوض کن. تغییرات برای همه کاربران اعمال می‌شه.</p>
+
+      <div class="card">
+        <div class="card-title">📢 آیکون‌های اعلان و رویداد</div>
+        <div class="icon-grid" id="sysIconGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏠 آیکون کانال‌ها</div>
+        <div class="icon-grid" id="chIconGrid"></div>
+      </div>
+
+      <button class="btn" onclick="saveSysIcons()">💾 ذخیره آیکون‌ها</button>
+    </div>
+
+    <!-- PAGE: Theme -->
+    <div class="page" id="page-theme">
+      <h2>🖌️ تم‌ساز سرور</h2>
+      <p class="page-sub">رنگ هر بخش رو برای هر سرور جداگانه تنظیم کن. کاربران بعد از refresh تغییرات رو می‌بینن.</p>
+
+      <div class="server-select-bar" id="themeServerBar">
+        <span style="color:var(--t3);font-size:13px;align-self:center">انتخاب سرور:</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎨 رنگ‌های اصلی</div>
+        <div class="color-grid" id="mainColors"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📝 رنگ متن‌ها</div>
+        <div class="color-grid" id="textColors"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👁️ پیش‌نمایش</div>
+        <div class="theme-preview" id="themePreview">
+          <div class="tp-sidebar" id="tpSidebar">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 6px;background:var(--accent)"></div>
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto;background:var(--bg4)"></div>
+          </div>
+          <div class="tp-ch" id="tpCh">
+            <div style="font-size:11px;margin-bottom:4px;opacity:.5">متنی</div>
+            <div style="font-size:12px;padding:4px 6px;border-radius:3px;background:rgba(255,255,255,.1)"># عمومی</div>
+          </div>
+          <div class="tp-chat" id="tpChat">
+            <div class="tp-msg" id="tpMsg1" style="background:rgba(255,255,255,.05)">
+              <span style="font-size:11px;font-weight:700">abol</span><br>
+              <span style="font-size:11px">سلام! این پیش‌نمایش تمه 👋</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="saveServerTheme()">💾 ذخیره تم سرور</button>
+        <button class="btn ghost" onclick="resetTheme()">🔄 ریست</button>
+      </div>
+    </div>
+
+    <!-- PAGE: Users -->
+    <div class="page" id="page-users">
+      <h2>👥 مدیریت کاربران</h2>
+      <p class="page-sub">لیست همه کاربران ثبت‌نام‌شده.</p>
+      <div class="card">
+        <input class="input" placeholder="🔍 جستجو..." oninput="filterUsers(this.value)" style="margin-bottom:16px">
+        <div id="usersList"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: Servers -->
+    <div class="page" id="page-servers">
+      <h2>🌐 مدیریت سرورها</h2>
+      <p class="page-sub">لیست همه سرورهای ساخته‌شده.</p>
+      <div class="card">
+        <div id="serversList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '';
+let token = localStorage.getItem('mt');
+let me = JSON.parse(localStorage.getItem('mu') || 'null');
+let allUsers = [], allServers = [], selectedServerId = null;
+let sysIcons = {}, serverTheme = {};
+
+const SYS_ICON_DEFS = [
+  {key:'join',    label:'ورود به سرور',   emoji:'👋'},
+  {key:'leave',   label:'خروج از سرور',   emoji:'🚪'},
+  {key:'ban',     label:'بن',             emoji:'🔨'},
+  {key:'kick',    label:'کیک',            emoji:'🦵'},
+  {key:'welcome', label:'خوش‌آمد',        emoji:'🎉'},
+  {key:'bot',     label:'پیام بات',       emoji:'🤖'},
+  {key:'pin',     label:'پین پیام',       emoji:'📌'},
+  {key:'mute',    label:'میوت',           emoji:'🔇'},
+  {key:'unmute',  label:'آنمیوت',         emoji:'🎤'},
+];
+const CH_ICON_DEFS = [
+  {key:'text',    label:'کانال متن',      emoji:'＃'},
+  {key:'voice',   label:'کانال ویس',     emoji:'🔊'},
+  {key:'news',    label:'اطلاعیه',        emoji:'📢'},
+  {key:'rules',   label:'قوانین',         emoji:'📋'},
+];
+const COLOR_DEFS = [
+  {key:'--bg-srv',  label:'سایدبار سرورها',  sub:'نوار سمت چپ آیکون‌ها',    def:'#1e1f22'},
+  {key:'--bg-ch',   label:'سایدبار کانال‌ها', sub:'لیست کانال‌ها',           def:'#2b2d31'},
+  {key:'--bg-chat', label:'پس‌زمینه چت',     sub:'منطقه پیام‌ها',            def:'#313338'},
+  {key:'--bg-input',label:'باکس ورودی',      sub:'رنگ input پیام',           def:'#383a40'},
+  {key:'--accent',  label:'رنگ اصلی',        sub:'دکمه‌ها، لینک‌ها',         def:'#5865f2'},
+  {key:'--green',   label:'رنگ آنلاین',      sub:'نقطه سبز کاربران',         def:'#23a55a'},
+  {key:'--red',     label:'رنگ خطر',         sub:'بن، حذف',                  def:'#f23f42'},
+];
+const TEXT_COLOR_DEFS = [
+  {key:'--t1',   label:'متن اصلی',     sub:'پیام‌ها، نام‌ها',    def:'#f2f3f5'},
+  {key:'--t2',   label:'متن ثانویه',   sub:'نام کانال‌ها',       def:'#b5bac1'},
+  {key:'--t3',   label:'متن خاکستری',  sub:'راهنما، تاریخ',     def:'#80848e'},
+];
+
+async function apiFetch(url, method='GET', body=null) {
+  const h = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+  const r = await fetch(url, {method, headers:h, body:body?JSON.stringify(body):null});
+  return r.json();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+function showPage(page, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+}
+
+async function init() {
+  if (!token || !me) { location.href='/'; return; }
+  document.getElementById('adminUserName').textContent = me.username;
+  document.getElementById('adminUserAvatar').textContent = me.username[0]?.toUpperCase();
+
+  const check = await apiFetch('/api/admin/check');
+  if (!check.isAdmin) {
+    document.getElementById('notAdmin').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('adminLayout').style.display = 'flex';
+  await loadAll();
+}
+
+async function loadAll() {
+  // Load sys icons
+  const si = await apiFetch('/api/admin/sysicons');
+  if (si.ok) { sysIcons = si.icons || {}; }
+  buildIconGrids();
+
+  // Load servers
+  const sr = await apiFetch('/api/servers');
+  if (sr.ok) { allServers = sr.servers; buildThemeServerBar(); buildServersList(); }
+
+  // Load users (from first server members for now)
+  buildUsersList();
+}
+
+// ── ICON GRIDS ────────────────────────────────────────────────────────────────
+function buildIconGrids() {
+  buildIconGrid('sysIconGrid', SYS_ICON_DEFS);
+  buildIconGrid('chIconGrid', CH_ICON_DEFS);
+}
+function buildIconGrid(containerId, defs) {
+  const c = document.getElementById(containerId); if (!c) return;
+  c.innerHTML = defs.map(d => {
+    const hasCustom = sysIcons[d.key];
+    return `<div class="icon-slot" title="${d.label}">
+      ${hasCustom ? `<span class="icon-badge">✓</span>` : ''}
+      ${hasCustom
+        ? `<img src="${sysIcons[d.key]}" class="icon-preview" alt="${d.label}">`
+        : `<div class="icon-preview">${d.emoji}</div>`}
+      <div class="icon-label">${d.label}</div>
+      <input type="file" accept="image/*" onchange="handleIconUpload('${d.key}',this)">
+    </div>`;
+  }).join('');
+}
+async function handleIconUpload(key, inp) {
+  const file = inp.files[0]; if (!file) return;
+  if (file.size > 500000) { toast('⚠️ حداکثر 500KB'); return; }
+  const r = new FileReader();
+  r.onload = ev => {
+    // compress
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const max = 64;
+      let w=img.width, h=img.height;
+      if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      sysIcons[key] = c.toDataURL('image/png', 0.8);
+      buildIconGrids();
+      toast('آیکون انتخاب شد ✅ (هنوز ذخیره نشده)');
+    };
+    img.src = ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+async function saveSysIcons() {
+  const d = await apiFetch('/api/admin/sysicons', 'PATCH', {icons: sysIcons});
+  if (d.ok) toast('آیکون‌ها ذخیره شدن ✅');
+  else toast('❌ خطا: ' + (d.msg||''));
+}
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function buildThemeServerBar() {
+  const bar = document.getElementById('themeServerBar');
+  const chips = allServers.map(s =>
+    `<div class="srv-chip" onclick="selectThemeServer('${s.id}',this)">${s.icon||'🌟'} ${s.name}</div>`
+  ).join('');
+  bar.innerHTML = '<span style="color:var(--t3);font-size:13px;align-self:center">سرور:</span>' + chips;
+  if (allServers.length) selectThemeServer(allServers[0].id, bar.querySelectorAll('.srv-chip')[0]);
+}
+async function selectThemeServer(id, el) {
+  selectedServerId = id;
+  document.querySelectorAll('.srv-chip').forEach(c=>c.classList.remove('active'));
+  el?.classList.add('active');
+  const d = await apiFetch(`/api/servers/${id}/theme`);
+  serverTheme = d.theme || {};
+  buildColorPickers();
+  updatePreview();
+}
+function buildColorPickers() {
+  document.getElementById('mainColors').innerHTML = COLOR_DEFS.map(colorCard).join('');
+  document.getElementById('textColors').innerHTML = TEXT_COLOR_DEFS.map(colorCard).join('');
+}
+function colorCard(d) {
+  const val = serverTheme[d.key] || d.def;
+  return `<div class="color-item">
+    <div class="color-item-label">${d.label}</div>
+    <div class="color-item-sub">${d.sub}</div>
+    <div class="color-row">
+      <div class="color-preview" id="cp-${d.key.replace('--','')}" style="background:${val}"></div>
+      <input type="color" class="color-input" value="${val}" oninput="onColorChange('${d.key}',this.value)">
+      <input type="text" class="color-hex" value="${val}" maxlength="7"
+        oninput="if(this.value.match(/^#[0-9a-f]{6}$/i))onColorChange('${d.key}',this.value)"
+        id="ch-${d.key.replace('--','')}">
+    </div>
+  </div>`;
+}
+function onColorChange(key, val) {
+  serverTheme[key] = val;
+  const safeKey = key.replace('--','');
+  const prev = document.getElementById('cp-'+safeKey);
+  const hex = document.getElementById('ch-'+safeKey);
+  if (prev) prev.style.background = val;
+  if (hex) hex.value = val;
+  updatePreview();
+}
+function updatePreview() {
+  const get = k => serverTheme[k] || null;
+  const sidebar = document.getElementById('tpSidebar');
+  const ch = document.getElementById('tpCh');
+  const chat = document.getElementById('tpChat');
+  const msg = document.getElementById('tpMsg1');
+  if(sidebar) sidebar.style.background = get('--bg-srv')||'#1e1f22';
+  if(ch) ch.style.background = get('--bg-ch')||'#2b2d31';
+  if(chat) chat.style.background = get('--bg-chat')||'#313338';
+  if(msg) { msg.style.color = get('--t1')||'#f2f3f5'; }
+}
+async function saveServerTheme() {
+  if (!selectedServerId) { toast('اول یه سرور انتخاب کن'); return; }
+  const d = await apiFetch(`/api/servers/${selectedServerId}`, 'PATCH', {theme: serverTheme});
+  if (d.ok) toast('تم سرور ذخیره شد ✅');
+  else toast('❌ خطا');
+}
+function resetTheme() {
+  serverTheme = {};
+  buildColorPickers();
+  updatePreview();
+  toast('تم ریست شد');
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+let allUsersData = [];
+async function buildUsersList() {
+  // از اولین سرور اعضا رو بگیر
+  if (!allServers.length) { document.getElementById('usersList').innerHTML = '<p style="color:var(--t3)">سروری نیست</p>'; return; }
+  const d = await apiFetch(`/api/servers/${allServers[0].id}/members`);
+  allUsersData = d.members || [];
+  renderUsers(allUsersData);
+}
+function renderUsers(list) {
+  document.getElementById('usersList').innerHTML = list.length
+    ? list.map(u => `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg1);border-radius:6px;margin-bottom:8px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${u.color||'var(--accent)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden">
+          ${u.avatarUrl?`<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover">`:(u.avatar||u.username?.[0]?.toUpperCase())}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${u.username} ${u.serverRole==='owner'?'👑':u.serverRole==='admin'?'🛡':''}</div>
+          <div style="font-size:12px;color:var(--t3)">${u.serverRole||'member'}</div>
+        </div>
+        <span style="font-size:11px;color:var(--t3)">${u.id?.slice(0,8)}...</span>
+      </div>`).join('')
+    : '<p style="color:var(--t3);text-align:center;padding:20px">کاربری نیست</p>';
+}
+function filterUsers(q) {
+  const filtered = allUsersData.filter(u => u.username?.toLowerCase().includes(q.toLowerCase()));
+  renderUsers(filtered);
+}
+
+// ── SERVERS ───────────────────────────────────────────────────────────────────
+function buildServersList() {
+  document.getElementById('serversList').innerHTML = allServers.length
+    ? allServers.map(s => `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg1);border-radius:6px;margin-bottom:8px">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden">
+          ${s.iconUrl?`<img src="${s.iconUrl}" style="width:100%;height:100%;object-fit:cover">`:(s.icon||'🌟')}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700">${s.name}</div>
+          <div style="font-size:12px;color:var(--t3)">${s.channels?.length||0} کانال · ${s.members?.length||0} عضو</div>
+        </div>
+        <span style="font-size:11px;color:var(--t3);font-family:monospace">${s.id?.slice(0,8)}</span>
+      </div>`).join('')
+    : '<p style="color:var(--t3);text-align:center;padding:20px">سروری نیست</p>';
+}
+
+init();
+</script>
+</body>
+</html>

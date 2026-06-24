@@ -37,6 +37,7 @@ function saveDB() {
 
 let db = loadDB();
 if (!db.users)    db.users = {};
+if (!db.sysIcons) db.sysIcons = {};
 if (!db.servers)  db.servers = {};
 if (!db.messages) db.messages = {};
 if (!db.roles)    db.roles = {};
@@ -380,12 +381,17 @@ app.patch('/api/servers/:id', authMiddleware, (req, res) => {
   if (!s) return res.json({ ok: false });
   if (!['owner','admin'].includes(getServerRole(req.params.id, req.userId)))
     return res.json({ ok: false, msg: 'دسترسی نداری' });
-  const { name, icon, iconUrl } = req.body;
+  const { name, icon, iconUrl, theme, sysIcons } = req.body;
   if (name) s.name = name;
   if (icon) s.icon = icon;
   if (iconUrl !== undefined) s.iconUrl = iconUrl;
+  if (theme !== undefined) s.theme = theme;
+  if (sysIcons !== undefined) s.sysIcons = sysIcons;
   saveDB();
-  io.to(`server:${s.id}`).emit('server_updated', { serverId: s.id, name: s.name, icon: s.icon, iconUrl: s.iconUrl });
+  io.to(`server:${s.id}`).emit('server_updated', {
+    serverId: s.id, name: s.name, icon: s.icon, iconUrl: s.iconUrl,
+    theme: s.theme, sysIcons: s.sysIcons
+  });
   res.json({ ok: true, server: s });
 });
 
@@ -414,6 +420,53 @@ app.post('/api/servers/:id/clear-messages', authMiddleware, (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ─── SERVER THEME ─────────────────────────────────────────────────────────────
+app.get('/api/servers/:id/theme', (req, res) => {
+  const srv = db.servers[req.params.id];
+  if (!srv) return res.json({ ok: false });
+  res.json({ ok: true, theme: srv.theme || null, sysIcons: srv.sysIcons || {} });
+});
+
+// ─── GLOBAL SYSTEM ICONS (owner-only, cross-server) ───────────────────────────
+app.get('/api/admin/sysicons', authMiddleware, (req, res) => {
+  if (!db.users[req.userId]) return res.json({ ok: false });
+  res.json({ ok: true, icons: db.sysIcons || {} });
+});
+
+app.patch('/api/admin/sysicons', authMiddleware, (req, res) => {
+  const user = db.users[req.userId];
+  if (!user || user.role !== 'admin') return res.json({ ok: false, msg: 'فقط ادمین' });
+  if (!db.sysIcons) db.sysIcons = {};
+  Object.assign(db.sysIcons, req.body.icons || {});
+  saveDB();
+  io.emit('sysicons_updated', { icons: db.sysIcons });
+  res.json({ ok: true });
+});
+
+// ─── MAKE ADMIN ───────────────────────────────────────────────────────────────
+app.post('/api/admin/promote', authMiddleware, (req, res) => {
+  const user = db.users[req.userId];
+  // اولین کاربر ثبت‌نام‌شده یا کسی که role=admin داره می‌تونه ادمین بده
+  const isFirst = Object.keys(db.users).indexOf(req.userId) === 0;
+  if (!isFirst && user?.role !== 'admin') return res.json({ ok: false, msg: 'دسترسی نداری' });
+  const target = req.body.userId;
+  if (db.users[target]) { db.users[target].role = 'admin'; saveDB(); }
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/check', authMiddleware, (req, res) => {
+  const user = db.users[req.userId];
+  const isFirst = Object.keys(db.users).indexOf(req.userId) === 0;
+  res.json({ ok: true, isAdmin: user?.role === 'admin' || isFirst, role: user?.role });
+});
+
+
+// ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // ─── SOCKET.IO ────────────────────────────────────────────────────────────────
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -431,6 +484,8 @@ io.on('connection', socket => {
 
   socket.join(`server:default`);
   socket.join(`channel:general`);
+  // ارسال آیکون‌های سیستم به کاربر
+  socket.emit('sysicons_updated', { icons: db.sysIcons || {} });
 
   Object.values(db.servers).forEach(s => {
     if (s.members.find(m => m.id === socket.userId)) socket.join(`server:${s.id}`);

@@ -400,3 +400,68 @@ window.startApp = function() {
 };
 
 })();
+
+// ── Server Theme & SysIcons ──────────────────────────────────────
+function applyServerTheme(theme) {
+  if (!theme) return;
+  const s = document.documentElement.style;
+  // map از کلیدهای admin به CSS vars موجود
+  const map = {
+    '--bg-srv': '--bg-1',
+    '--bg-ch':  '--bg-2',
+    '--bg-chat':'--bg-3',
+    '--bg-input':'--bg-4',
+    '--accent': '--accent',
+    '--green':  '--green',
+    '--red':    '--red',
+    '--t1':     '--text-1',
+    '--t2':     '--text-2',
+    '--t3':     '--text-3',
+  };
+  Object.entries(theme).forEach(([k,v]) => {
+    const cssVar = map[k] || k;
+    s.setProperty(cssVar, v);
+  });
+}
+
+function applySysIcons(icons) {
+  if (!icons) return;
+  window.__sysIcons = icons;
+  // می‌تونیم بعداً در render توابع استفاده کنیم
+}
+
+// Hook socket برای دریافت theme و icons
+function hookThemeEvents() {
+  if (!window.socket || window.__themeHooked) return;
+  window.__themeHooked = true;
+
+  socket.on('sysicons_updated', ({icons}) => {
+    applySysIcons(icons);
+  });
+
+  socket.on('server_updated', ({serverId, theme, sysIcons}) => {
+    if (serverId === window.currentServerId && theme) {
+      applyServerTheme(theme);
+    }
+  });
+
+  // بارگذاری theme سرور فعلی
+  loadCurrentServerTheme();
+}
+
+async function loadCurrentServerTheme() {
+  try {
+    const r = await fetch(`/api/servers/${window.currentServerId||'default'}/theme`);
+    const d = await r.json();
+    if (d.ok && d.theme) applyServerTheme(d.theme);
+  } catch(e) {}
+}
+
+// re-hook وقتی سرور عوض میشه
+const _origSelectServer = window.selectServer;
+window.selectServer = async function(id) {
+  await _origSelectServer?.(id);
+  setTimeout(loadCurrentServerTheme, 500);
+};
+
+setInterval(hookThemeEvents, 1500);
