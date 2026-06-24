@@ -11,155 +11,180 @@
 </head>
 <body>
 
-<!-- CANVAS EFFECTS -->
 <canvas id="particleCanvas" style="position:fixed;inset:0;z-index:0;pointer-events:none;display:none"></canvas>
 <div class="lightning-bg hidden" id="lightningBg"><div class="lightning-bolt"></div><div class="lightning-bolt"></div><div class="lightning-bolt"></div></div>
 <div id="energyWaves" class="hidden"><div class="energy-wave"></div><div class="energy-wave"></div></div>
 
 <!-- ═══ AUTH ═══ -->
-<div id="authScreen" class="auth-screen" dir="rtl">
+<div id="authScreen" class="auth-screen">
   <div class="auth-card">
-    <div class="auth-logo"><img src="/icon.png" style="width:72px;height:72px;border-radius:50%" onerror="this.outerHTML='🌙'"></div>
-    <div class="auth-title">GapHub</div>
+    <div class="auth-logo"><img src="/icon.png" onerror="this.outerHTML='<div style=font-size:48px>💬</div>'"></div>
+    <h2 class="auth-title">خوش برگشتی!</h2>
     <div id="inviteBanner" class="invite-banner hidden"></div>
-    <div class="auth-sub">جایی برای دوستات</div>
+    <p class="auth-sub">برای ادامه وارد شو</p>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">ورود</button>
       <button class="auth-tab" onclick="switchTab('register')">ثبت‌نام</button>
     </div>
     <div id="authError" class="auth-error"></div>
-    <input id="authUser" class="auth-input" type="text" placeholder="نام‌کاربری" autocomplete="username">
-    <input id="authPass" class="auth-input" type="password" placeholder="رمز عبور" autocomplete="current-password">
+    <div class="auth-field">
+      <label>نام‌کاربری</label>
+      <input id="authUser" class="auth-input" type="text" placeholder="نام‌کاربری" autocomplete="username">
+    </div>
+    <div class="auth-field">
+      <label>رمز عبور</label>
+      <input id="authPass" class="auth-input" type="password" placeholder="رمز عبور" autocomplete="current-password">
+    </div>
     <label class="remember-row">
       <input type="checkbox" id="rememberMe" checked>
       <span>مرا به خاطر بسپار</span>
     </label>
-    <button class="auth-btn" onclick="doAuth()">ادامه →</button>
+    <button class="auth-btn" onclick="doAuth()">ادامه</button>
   </div>
 </div>
 
 <!-- ═══ APP ═══ -->
 <div class="mob-overlay" id="mobOverlay" onclick="closeMobileSidebars()"></div>
-<div id="app" class="app hidden" dir="ltr">
+<div id="app" class="app hidden">
 
-  <!-- SERVER BAR -->
+  <!-- SERVER BAR (72px) -->
   <div class="server-bar">
-    <div id="serverIcons"></div>
-    <div class="server-sep"></div>
-    <div class="server-icon add-srv" title="سرور جدید" onclick="openModal('createServerModal')">＋</div>
-    <div style="margin-top:auto"></div>
-    <div class="server-icon" title="پروفایل" onclick="openModal('profileModal')">
-      <div id="myAvatarSmall" style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">م</div>
+    <div class="srv-bar-top">
+      <!-- DM icon -->
+      <div class="srv-icon srv-home" title="پیام‌های مستقیم" onclick="selectServer('default')" id="si-home">
+        <svg width="28" height="20" viewBox="0 0 28 20" fill="currentColor"><path d="M23.7 0H4.3C1.9 0 0 1.9 0 4.3v11.4C0 18.1 1.9 20 4.3 20h19.4c2.4 0 4.3-1.9 4.3-4.3V4.3C28 1.9 26.1 0 23.7 0zm-6.6 15.4H10.9v-2.1h6.2v2.1zm3.1-4.2H7.8V9.1h12.4v2.1zm0-4.2H7.8V4.9h12.4V7z"/></svg>
+      </div>
+      <div class="srv-bar-sep"></div>
+      <div id="serverIcons"></div>
+      <div class="srv-icon srv-add" title="سرور اضافه کن" onclick="openModal('createServerModal')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11.1111H12.8889V4H11.1111V11.1111H4V12.8889H11.1111V20H12.8889V12.8889H20V11.1111Z"/></svg>
+      </div>
+    </div>
+    <div class="srv-bar-bottom">
+      <div class="srv-icon srv-avatar" title="پروفایل" onclick="openModal('profileModal')">
+        <div id="myAvatarSmall" class="srv-avatar-inner">م</div>
+        <div class="srv-status-dot online"></div>
+      </div>
     </div>
   </div>
 
-  <!-- CHANNEL SIDEBAR -->
-  <div class="channel-sidebar">
-    <div class="server-name-bar">
-      <span id="sidebarServerName" class="srv-title">GapHub اصلی</span>
-      <span class="srv-gear" onclick="openServerSettings()" title="تنظیمات سرور">⚙</span>
+  <!-- CHANNEL SIDEBAR (240px) -->
+  <div class="ch-sidebar" id="channelSidebar">
+    <div class="ch-sidebar-header" onclick="openServerSettings()">
+      <span id="sidebarServerName" class="ch-srv-name">GapHub</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="ch-header-arrow"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6-1.41-1.41z"/></svg>
     </div>
-    <div id="channelList" class="channel-list"></div>
-    <div class="user-area">
-      <div id="myAvatarEl" class="user-avatar" style="background:var(--accent)">م</div>
-      <div class="user-info">
-        <div id="myUsernameEl" class="uname">—</div>
-        <div id="myStatusEl" class="ustatus">آنلاین</div>
+    <div class="ch-list" id="channelList"></div>
+    <div class="ch-userbar">
+      <div class="ch-useravatar">
+        <div id="myAvatarEl" class="ch-avatar-inner" style="background:var(--accent)">م</div>
+        <div class="ch-status-dot"></div>
       </div>
-      <div class="user-actions">
+      <div class="ch-userinfo">
+        <div id="myUsernameEl" class="ch-uname">—</div>
+        <div id="myStatusEl" class="ch-ustatus">آنلاین</div>
+      </div>
+      <div class="ch-userbtns">
         <div class="ping-display" id="pingDisplay" title="پینگ">
-          <span id="pingValue">--</span>
-          <span class="ping-label">ms</span>
+          <span id="pingValue">--</span><span style="font-size:9px;color:#6d6f78">ms</span>
         </div>
-        <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="میکروفون">🎤</button>
-        <button class="icon-btn" onclick="openModal('audioSettingsModal')" title="تنظیمات صدا">🎧</button>
-        <button class="icon-btn" onclick="openModal('profileModal')" title="پروفایل">⚙</button>
+        <button class="ch-iconbtn" id="micBtn" onclick="toggleMic()" title="میکروفون">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+        <button class="ch-iconbtn" onclick="toggleDeafen()" title="هدفون" id="deafenBtnSide">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 00-9 9v7c0 1.1.9 2 2 2h1v-8H4v-1a8 8 0 0116 0v1h-2v8h1c1.1 0 2-.9 2-2v-7a9 9 0 00-9-9z"/></svg>
+        </button>
+        <button class="ch-iconbtn" onclick="openModal('audioSettingsModal')" title="تنظیمات">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- MAIN -->
+  <!-- MAIN CONTENT -->
   <div class="main-content">
+    <!-- CHAT HEADER -->
     <div class="chat-header">
-      <button class="ch-toggle-btn" onclick="toggleChannelSidebar()">☰</button>
-      <span id="headerIcon" class="h-icon">＃</span>
-      <span id="headerName" class="h-name">عمومی</span>
-      <span id="headerType" class="h-type">متن</span>
-      <div class="h-actions">
-        <button class="icon-btn" onclick="toggleMemberList()" title="اعضا">👥</button>
-        <button class="icon-btn" onclick="openModal('musicModal')" title="موزیک">🎵</button>
+      <button class="mob-menu-btn" onclick="toggleChannelSidebar()">☰</button>
+      <div class="chat-header-icon" id="headerIcon">#</div>
+      <div class="chat-header-name" id="headerName">عمومی</div>
+      <div class="chat-header-type hidden" id="headerType">متن</div>
+      <div class="chat-header-actions">
+        <button class="ch-iconbtn" onclick="toggleMemberList()" title="اعضا">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </button>
       </div>
     </div>
 
-    <div class="content-body">
-      <!-- VOICE VIEW - Discord Style -->
+    <!-- CHAT AREA -->
+    <div class="chat-wrap">
+      <!-- VOICE VIEW -->
       <div id="voiceView" class="voice-view hidden">
-        <div class="vc-main">
-          <!-- Screen share grid -->
+        <div class="vc-top">
           <div id="vcScreenGrid" class="vc-screen-grid hidden">
-            <div class="vc-screen-cell">
+            <div class="vc-screen-box">
               <video id="screenShareVideo" autoplay playsinline></video>
               <div class="vc-screen-label" id="ssUsername">🖥 اشتراک صفحه</div>
             </div>
           </div>
-          <!-- Participants -->
           <div id="vcParticipants" class="vc-participants"></div>
         </div>
-        <!-- Discord toolbar -->
-        <div class="vc-toolbar">
-          <div class="vc-toolbar-left">
-            <span class="vc-signal">🟢</span>
+        <div class="vc-bottom">
+          <div class="vc-bottom-info">
+            <div class="vc-voice-icon">🔊</div>
             <div>
               <div id="vcTitle" class="vc-ch-name">ویس عمومی</div>
-              <div id="pingDisplay" class="ping-display" style="border:none;background:none;padding:0">
-                <span id="pingValue" style="font-size:11px;color:#6d6f78">--</span>
-                <span class="ping-label" style="font-size:10px;color:#6d6f78">ms</span>
-              </div>
+              <div class="vc-server-name" id="vcServerName">GapHub</div>
             </div>
           </div>
-
-          <div class="vc-toolbar-center">
-            <!-- Audio group -->
-            <button class="vc-tool-btn" id="vcMuteBtn" onclick="toggleVcMic()" title="میکروفون">🎤</button>
-            <button class="vc-tool-btn" id="deafenBtn" onclick="toggleDeafen()" title="هدفون">🎧</button>
-            <div class="vc-divider"></div>
-            <!-- Video/Share group -->
-            <button class="vc-tool-btn" id="cameraBtn" onclick="toggleCamera()" title="دوربین">📹</button>
-            <button class="vc-tool-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">🖥️</button>
-            <div class="vc-divider"></div>
-            <!-- Other -->
-            <button class="vc-tool-btn" onclick="openModal('soundboardModal')" title="ساندبورد">🎵</button>
-            <button class="vc-tool-btn" onclick="toggleMemberList()" title="اعضا">👥</button>
-          </div>
-
-          <div class="vc-toolbar-right">
-            <button class="vc-leave-btn" onclick="leaveVoice()" title="خروج از ویس">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M5 5h7V3H3v18h9v-2H5V5zm16 7l-4-4v3H9v2h8v3l4-4z"/>
-              </svg>
+          <div class="vc-controls">
+            <button class="vc-ctrl-btn" id="vcMuteBtn" onclick="toggleVcMic()" title="میکروفون">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            </button>
+            <button class="vc-ctrl-btn" id="deafenBtn" onclick="toggleDeafen()" title="هدفون">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 00-9 9v7c0 1.1.9 2 2 2h1v-8H4v-1a8 8 0 0116 0v1h-2v8h1c1.1 0 2-.9 2-2v-7a9 9 0 00-9-9z"/></svg>
+            </button>
+            <button class="vc-ctrl-btn" id="cameraBtn" onclick="toggleCamera()" title="دوربین">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </button>
+            <button class="vc-ctrl-btn" id="screenShareBtn" onclick="toggleScreenShare()" title="اشتراک صفحه">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+            </button>
+            <button class="vc-ctrl-btn danger" onclick="leaveVoice()" title="قطع ویس">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- CHAT VIEW -->
+      <!-- TEXT VIEW -->
       <div id="chatView" class="chat-view">
         <div id="messagesArea" class="messages-area"></div>
         <div id="typingBar" class="typing-bar"></div>
         <div class="input-area">
           <div id="emojiPicker" class="emoji-picker"></div>
-          <button class="icon-btn" onclick="toggleEmoji()">😊</button>
-          <input id="msgInput" class="msg-input" placeholder="پیام بفرست... | !p اسم آهنگ برای بات موزیک" onkeydown="handleKey(event)" oninput="handleTyping()">
-          <button class="send-btn" onclick="sendMessage()">↑</button>
+          <div class="input-box">
+            <button class="input-icon-btn" onclick="document.getElementById('chatFileInput').click()" title="آپلود فایل">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+            </button>
+            <input id="chatFileInput" type="file" style="display:none" accept="image/*,video/*,audio/*,.pdf,.zip,.txt">
+            <input id="msgInput" class="msg-input" placeholder="پیام بفرست..." onkeydown="handleKey(event)" oninput="handleTyping()" dir="rtl">
+            <button class="input-icon-btn" onclick="toggleEmoji()" title="ایموجی">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+            </button>
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- MEMBER LIST -->
-  <div id="memberList" class="member-list hidden">
-    <div class="ml-title">اعضا</div>
-    <div id="memberItems"></div>
+    <!-- MEMBER LIST -->
+    <div id="memberList" class="member-list hidden">
+      <div class="ml-title">اعضا</div>
+      <div id="memberItems"></div>
+    </div>
   </div>
 </div>
 
@@ -169,209 +194,150 @@
 <div class="modal-overlay hidden" id="profileModal" dir="rtl">
   <div class="modal">
     <div class="m-title">👤 پروفایل من</div>
-
-    <!-- Avatar upload -->
     <div class="avatar-upload-wrap">
       <div id="profileAvatarBig" class="profile-avatar-big" onclick="document.getElementById('avatarFileInput').click()" title="کلیک برای تغییر عکس">م</div>
       <input id="avatarFileInput" type="file" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
-      <div class="avatar-hint">📷 کلیک برای آپلود عکس</div>
     </div>
-
     <div id="profileUsernameDisplay" class="profile-uname-big">—</div>
-
-    <!-- دکمه‌های اصلی بالا -->
-    <div class="m-actions" style="margin-bottom:16px">
-      <button class="auth-btn" onclick="saveProfile()">💾 ذخیره</button>
-      <button class="m-cancel" onclick="doLogout()">🚪 خروج</button>
+    <div class="m-actions" style="margin-bottom:12px">
+      <button class="auth-btn sm" onclick="openModal('audioSettingsModal');closeModal('profileModal')">🎧 تنظیمات صدا</button>
+      <button class="auth-btn sm" onclick="openModal('soundboardModal');closeModal('profileModal')">🎛 ساندبورد</button>
+      <button class="danger-btn" onclick="doLogout()">🚪 خروج</button>
     </div>
-
     <input id="profileBio" class="auth-input" placeholder="بیو (درباره خودت)">
     <select id="profileStatus" class="auth-input">
-      <option value="آنلاین">🟢 آنلاین</option>
-      <option value="مشغول">🔴 مشغول</option>
-      <option value="غایب">🌙 غایب</option>
-      <option value="نامرئی">⚫ نامرئی</option>
+      <option value="online">🟢 آنلاین</option>
+      <option value="idle">🌙 بیکار</option>
+      <option value="dnd">⛔ مزاحم نشو</option>
+      <option value="invisible">👻 نامرئی</option>
     </select>
-
-    <!-- Theme -->
-    <div class="section-label">🎨 رنگ تم</div>
+    <div class="section-label">🎨 تم رنگی</div>
     <div id="themeColors" class="theme-picker"></div>
-
-    <!-- BG Effect -->
     <div class="section-label">✨ افکت پس‌زمینه</div>
     <div id="bgEffectSelector" class="bg-effect-grid"></div>
-
-
+    <div class="m-actions">
+      <button class="auth-btn" onclick="saveProfile()">💾 ذخیره</button>
+      <button class="m-cancel" onclick="closeModal('profileModal')">لغو</button>
+    </div>
     <button class="m-close" onclick="closeModal('profileModal')">✕</button>
   </div>
 </div>
 
 <!-- Server Settings -->
 <div class="modal-overlay hidden" id="serverSettingsModal">
-  <div class="modal wide" style="max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    
-    <!-- Header -->
-    <div style="padding:20px 24px 0;flex-shrink:0">
-      <div class="m-title" style="margin-bottom:12px">⚙ تنظیمات سرور — <span id="srvSettingsName" style="color:var(--accent)"></span></div>
-      <div class="settings-tabs" style="overflow-x:auto;flex-wrap:nowrap;white-space:nowrap">
-        <button class="stab active" onclick="switchStab(this,'overview')">📋 کلی</button>
-        <button class="stab" onclick="switchStab(this,'roles')">🎭 رول‌ها</button>
-        <button class="stab" onclick="switchStab(this,'members')">👥 اعضا</button>
-        <button class="stab" onclick="switchStab(this,'channels')">📢 کانال‌ها</button>
-        <button class="stab" onclick="switchStab(this,'invite')">🔗 دعوت</button>
-        <button class="stab" onclick="switchStab(this,'danger')">⚠️ خطر</button>
+  <div class="modal wide" dir="rtl">
+    <div class="m-title" style="margin-bottom:12px">⚙ تنظیمات سرور — <span id="srvSettingsName" style="color:var(--accent)"></span></div>
+    <div class="stabs">
+      <button class="stab active" onclick="switchStab('overview',this)">کلی</button>
+      <button class="stab" onclick="switchStab('roles',this)">رول‌ها</button>
+      <button class="stab" onclick="switchStab('members',this)">اعضا</button>
+      <button class="stab" onclick="switchStab('channels',this)">کانال‌ها</button>
+      <button class="stab" onclick="switchStab('invite',this)">دعوت</button>
+      <button class="stab" onclick="switchStab('danger',this)">خطر</button>
+    </div>
+    <div id="stab-overview" class="stab-content">
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+        <div id="srvIconPreview" class="new-srv-icon" style="width:72px;height:72px;flex-shrink:0" onclick="document.getElementById('srvIconFile').click()">🌟</div>
+        <input id="srvIconFile" type="file" accept="image/*" style="display:none" onchange="uploadServerIcon(event)">
+        <div style="flex:1">
+          <input id="editServerName" class="auth-input" placeholder="اسم سرور" style="margin-bottom:8px">
+          <button class="auth-btn sm" onclick="saveServerInfo()">💾 ذخیره</button>
+        </div>
+      </div>
+      <div id="srvStats" class="srv-stats-grid"></div>
+    </div>
+    <div id="stab-roles" class="stab-content hidden">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="newRoleName" class="auth-input" placeholder="اسم رول مثلاً: VIP" style="margin:0;flex:1">
+        <input id="newRoleColor" type="color" value="#7c6af7" class="color-pick">
+        <button class="auth-btn sm" onclick="createRole()">＋</button>
+      </div>
+      <div id="rolesList" class="roles-list"></div>
+      <div id="roleEditPanel" class="role-edit-panel hidden">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div id="roleEditTitle" style="font-size:16px;font-weight:700">ویرایش رول</div>
+        </div>
+        <input id="roleEditName" class="auth-input" placeholder="اسم رول">
+        <input id="roleEditColor" type="color" class="color-pick" style="width:60px;height:44px;margin-bottom:16px">
+        <div class="section-label">دسترسی‌ها</div>
+        <label class="audio-toggle"><div class="at-info"><div class="at-title">مدیریت کانال‌ها</div></div><input type="checkbox" id="rpManageChannels"><div class="at-switch"></div></label>
+        <label class="audio-toggle"><div class="at-info"><div class="at-title">کیک / بن اعضا</div></div><input type="checkbox" id="rpKickMembers"><div class="at-switch"></div></label>
+        <label class="audio-toggle"><div class="at-info"><div class="at-title">پین پیام‌ها</div></div><input type="checkbox" id="rpPinMessages"><div class="at-switch"></div></label>
+        <div class="m-actions">
+          <button class="auth-btn" onclick="saveRoleEdit()">💾 ذخیره</button>
+          <button class="danger-btn" onclick="deleteRole()">🗑 حذف رول</button>
+        </div>
+        <input type="hidden" id="roleEditId">
       </div>
     </div>
-
-    <!-- Content -->
-    <div style="padding:16px 24px 20px;overflow-y:auto;flex:1;position:relative">
-
-      <!-- Overview Tab -->
-      <div id="stab-overview" class="stab-content">
-        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
-          <div id="srvIconPreview" class="new-srv-icon" style="width:72px;height:72px;flex-shrink:0" onclick="document.getElementById('srvIconFile').click()">🌟</div>
-          <input id="srvIconFile" type="file" accept="image/*" style="display:none" onchange="uploadServerIcon(event)">
-          <div style="flex:1">
-            <div class="section-label">اسم سرور</div>
-            <input id="editServerName" class="auth-input" placeholder="اسم سرور" style="margin-bottom:8px">
-            <button class="auth-btn" onclick="saveServerInfo()" style="width:100%">💾 ذخیره</button>
-          </div>
-        </div>
-        <div class="section-label">آمار سرور</div>
-        <div id="srvStats" class="srv-stats-grid"></div>
+    <div id="stab-members" class="stab-content hidden">
+      <input id="memberSearch" class="auth-input" placeholder="🔍 جستجوی عضو..." oninput="filterMembers(this.value)" style="margin-bottom:12px">
+      <div id="srvMembersList" class="roles-list"></div>
+    </div>
+    <div id="stab-channels" class="stab-content hidden">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="newChNameSrv" class="auth-input" placeholder="اسم کانال جدید" style="margin:0;flex:1">
+        <select id="newChTypeSrv" class="auth-input" style="margin:0;width:100px">
+          <option value="text">متن</option>
+          <option value="voice">ویس</option>
+        </select>
+        <button class="auth-btn sm" onclick="addChannelFromSettings()">＋</button>
       </div>
-
-      <!-- Roles Tab -->
-      <div id="stab-roles" class="stab-content hidden">
-        <div class="role-create">
-          <input id="newRoleName" class="auth-input" placeholder="اسم رول مثلاً: VIP" style="margin:0;flex:1">
-          <input id="newRoleColor" type="color" value="#7c6af7" class="color-pick">
-          <button class="auth-btn sm" onclick="createRole()">＋ بساز</button>
-        </div>
-        <div id="rolesList" class="roles-list"></div>
-        <!-- Role Edit Panel -->
-        <div id="roleEditPanel" class="role-edit-panel hidden">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-            <button class="icon-btn" onclick="closeRoleEdit()">←</button>
-            <div id="roleEditTitle" style="font-size:16px;font-weight:700">ویرایش رول</div>
-          </div>
-          <input id="roleEditName" class="auth-input" placeholder="اسم رول">
-          <input id="roleEditColor" type="color" class="color-pick" style="width:60px;height:44px;margin-bottom:16px">
-          <div class="section-label">🔐 دسترسی‌ها</div>
-          <div class="perms-list">
-            <label class="perm-item"><input type="checkbox" value="send_messages"> 💬 ارسال پیام</label>
-            <label class="perm-item"><input type="checkbox" value="join_voice"> 🎤 پیوستن به ویس</label>
-            <label class="perm-item"><input type="checkbox" value="speak_voice"> 🔊 صحبت در ویس</label>
-            <label class="perm-item"><input type="checkbox" value="manage_messages"> ✏️ مدیریت پیام‌ها</label>
-            <label class="perm-item"><input type="checkbox" value="kick_members"> 🚪 کیک کاربران</label>
-            <label class="perm-item"><input type="checkbox" value="ban_members"> 🔨 بن کاربران</label>
-            <label class="perm-item"><input type="checkbox" value="manage_channels"> 📢 مدیریت کانال‌ها</label>
-            <label class="perm-item"><input type="checkbox" value="manage_roles"> 🎭 مدیریت رول‌ها</label>
-            <label class="perm-item"><input type="checkbox" value="use_soundboard"> 🎛 ساندبورد</label>
-            <label class="perm-item"><input type="checkbox" value="move_members"> 📡 انتقال کاربران</label>
-          </div>
-          <input type="hidden" id="roleEditId">
-          <div class="m-actions">
-            <button class="auth-btn" onclick="saveRoleEdit()">💾 ذخیره</button>
-            <button class="m-cancel" onclick="closeRoleEdit()">لغو</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Members Tab -->
-      <div id="stab-members" class="stab-content hidden">
-        <input id="memberSearch" class="auth-input" placeholder="🔍 جستجوی عضو..." oninput="filterMembers(this.value)" style="margin-bottom:12px">
-        <div id="srvMembersList" class="roles-list"></div>
-      </div>
-
-      <!-- Channels Tab -->
-      <div id="stab-channels" class="stab-content hidden">
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <input id="newChNameSrv" class="auth-input" placeholder="اسم کانال جدید" style="margin:0;flex:1">
-          <select id="newChTypeSrv" class="auth-input" style="margin:0;width:100px">
-            <option value="text">💬 متن</option>
-            <option value="voice">🔊 ویس</option>
-          </select>
-          <button class="auth-btn sm" onclick="addChannelFromSettings()">＋</button>
-        </div>
-        <div id="srvChannelsList" class="roles-list"></div>
-      </div>
-
-      <!-- Invite Tab -->
-      <div id="stab-invite" class="stab-content hidden">
-        <div class="section-label">لینک دعوت به سرور</div>
-        <div id="serverInviteLinkDisplay" class="invite-box">—</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="auth-btn" onclick="copyCurrentInvite()" style="flex:1">📋 کپی لینک</button>
-          <button class="auth-btn sm" onclick="shareInvite()" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text)">📤 اشتراک</button>
-        </div>
-        <div class="section-label" style="margin-top:16px">لینک را برای دوستانت بفرست</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.8">
-          دوستت لینک رو باز میکنه ← لاگین میکنه ← خودکار به سرور میپیونده
-        </div>
-      </div>
-
-      <!-- Danger Tab -->
-      <div id="stab-danger" class="stab-content hidden">
-        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin-bottom:12px">
-          <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ منطقه خطر</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">این عملیات‌ها برگشت‌ناپذیر هستند</div>
-          <button class="danger-btn" onclick="deleteServer()" style="width:100%;margin-bottom:8px">🗑 حذف کامل سرور</button>
-          <button class="danger-btn" style="width:100%;background:rgba(239,68,68,.05)" onclick="clearServerMessages()">🧹 پاک کردن همه پیام‌ها</button>
-        </div>
-      </div>
-
+      <div id="srvChannelsList" class="roles-list"></div>
+    </div>
+    <div id="stab-invite" class="stab-content hidden">
+      <div id="serverInviteLinkDisplay" class="invite-box">—</div>
+      <button class="auth-btn" onclick="shareInvite()" style="margin-top:12px;width:100%">📋 کپی لینک دعوت</button>
+    </div>
+    <div id="stab-danger" class="stab-content hidden">
+      <p style="color:var(--muted);font-size:14px;margin-bottom:16px">این کارها برگشت‌پذیر نیستن!</p>
+      <button class="danger-btn" style="width:100%;margin-bottom:8px" onclick="clearServerMessages()">🗑 پاک کردن همه پیام‌ها</button>
+      <button class="danger-btn" style="width:100%" onclick="deleteServer()">💥 حذف سرور</button>
     </div>
     <button class="m-close" onclick="closeModal('serverSettingsModal')">✕</button>
   </div>
 </div>
 
 <!-- Create Server -->
-<div class="modal-overlay hidden" id="createServerModal">
+<div class="modal-overlay hidden" id="createServerModal" dir="rtl">
   <div class="modal">
-    <div class="m-title">🌟 سرور جدید</div>
-    
-    <!-- Server Icon Upload -->
-    <div style="text-align:center;margin-bottom:16px">
+    <div class="m-title">✨ سرور جدید بساز</div>
+    <div class="new-srv-icon-wrap">
       <div id="newSrvIconPreview" class="new-srv-icon" onclick="document.getElementById('newSrvIconFile').click()">
         <span id="newSrvIconEmoji" style="font-size:32px">🌟</span>
       </div>
       <input id="newSrvIconFile" type="file" accept="image/*" style="display:none" onchange="previewNewServerIcon(event)">
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">📷 کلیک برای آپلود عکس</div>
     </div>
-
     <input id="newServerName" class="auth-input" placeholder="اسم سرور">
-    
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">یا یه ایموجی انتخاب کن:</div>
-    <div id="iconQuickPick" class="icon-quick-grid">
-      🔥 🏆 🎮 🎵 🎨 💻 🌟 🚀 ⚡ ❤️ 🎉 🌊 👑 💎 🦁 🐉 🎯 🛡 🌙 🎭
-    </div>
-
+    <div class="section-label">آیکون سریع</div>
+    <div id="iconQuickPick" class="icon-quick-grid">🌟 🎮 🎵 🎯 💎 🚀 🔥 ⚡ 🌈 🎪 🏆 🎭 🎨 🦋 🐉 🌙</div>
     <div class="m-actions">
-      <button class="auth-btn" onclick="createServer()">＋ بساز</button>
+      <button class="auth-btn" onclick="createServer()">✨ بساز</button>
       <button class="m-cancel" onclick="closeModal('createServerModal')">لغو</button>
     </div>
+    <button class="m-close" onclick="closeModal('createServerModal')">✕</button>
   </div>
 </div>
 
 <!-- Add Channel -->
-<div class="modal-overlay hidden" id="addChannelModal">
+<div class="modal-overlay hidden" id="addChannelModal" dir="rtl">
   <div class="modal">
-    <div class="m-title">＋ کانال جدید</div>
-    <input id="newChName" class="auth-input" placeholder="اسم کانال">
-    <div class="ch-type-row">
-      <label><input type="radio" name="chType" value="text" checked> 💬 متن</label>
-      <label><input type="radio" name="chType" value="voice"> 🔊 ویس</label>
+    <div class="m-title">＃ کانال جدید</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="ch-type-btn active" id="chTypeText" onclick="selectChType('text')">＃ متن</button>
+      <button class="ch-type-btn" id="chTypeVoice" onclick="selectChType('voice')">🔊 ویس</button>
     </div>
+    <input id="newChName" class="auth-input" placeholder="اسم کانال">
     <div class="m-actions">
-      <button class="auth-btn" onclick="addChannel()">بساز</button>
+      <button class="auth-btn" onclick="addChannel()">ساخت کانال</button>
       <button class="m-cancel" onclick="closeModal('addChannelModal')">لغو</button>
     </div>
+    <button class="m-close" onclick="closeModal('addChannelModal')">✕</button>
   </div>
 </div>
 
 <!-- Join Server -->
-<div class="modal-overlay hidden" id="joinServerModal">
+<div class="modal-overlay hidden" id="joinServerModal" dir="rtl">
   <div class="modal">
     <div class="m-title">🔗 پیوستن به سرور</div>
     <input id="joinServerId" class="auth-input" placeholder="آیدی یا لینک سرور">
@@ -379,42 +345,43 @@
       <button class="auth-btn" onclick="joinServer()">پیوستن</button>
       <button class="m-cancel" onclick="closeModal('joinServerModal')">لغو</button>
     </div>
+    <button class="m-close" onclick="closeModal('joinServerModal')">✕</button>
   </div>
 </div>
 
-<!-- User Context Menu -->
-<div class="modal-overlay hidden" id="userMenuModal">
+<!-- User Profile Popup -->
+<div class="modal-overlay hidden" id="userProfileModal" dir="rtl">
   <div class="modal">
-    <div id="ctxAvatarWrap" style="text-align:center;margin-bottom:8px">
-      <div id="ctxAvatar" style="width:64px;height:64px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;background:var(--accent)">م</div>
-    </div>
-    <div id="ctxUsername" class="m-title" style="text-align:center;margin-bottom:16px">کاربر</div>
-    <input type="hidden" id="ctxUserId">
-    <input type="hidden" id="ctxUserRole">
+    <div id="userProfileContent"></div>
+    <button class="m-close" onclick="closeModal('userProfileModal')">✕</button>
+  </div>
+</div>
 
+<!-- User Menu (mod actions) -->
+<div class="modal-overlay hidden" id="userMenuModal" dir="rtl">
+  <div class="modal">
+    <div class="m-title" id="ctxUsername">کاربر</div>
     <div class="section-label">رول سرور</div>
-    <select id="roleSelect" class="auth-input">
-      <option value="admin">🛡 ادمین</option>
-      <option value="mod">🔨 مود</option>
+    <select id="ctxRoleSelect" class="auth-input">
       <option value="member">👤 عضو</option>
+      <option value="mod">🔨 مود</option>
+      <option value="admin">🛡 ادمین</option>
     </select>
     <button class="auth-btn" onclick="setRole()" style="margin-bottom:12px">💾 ذخیره رول</button>
-
     <div class="section-label">رول‌های سفارشی</div>
     <div id="ctxCustomRoles" class="roles-list" style="max-height:120px"></div>
-
     <div class="danger-row">
       <button class="danger-btn" onclick="kickUser()">🚪 کیک</button>
       <button class="danger-btn" onclick="banUser()">🔨 بن</button>
     </div>
-    <button class="auth-btn sm" onclick="openMoveUser()" style="width:100%;margin-top:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim)">📡 انتقال به ویس</button>
+    <button class="auth-btn sm" onclick="openMoveUser()" style="width:100%;margin-top:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--dim)">📡 انتقال به ویس</button>
     <button class="auth-btn sm" onclick="disconnectFromVoice()" style="width:100%;margin-top:8px;background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red)">🔌 دیسکانکت از ویس</button>
     <button class="m-close" onclick="closeModal('userMenuModal')">✕</button>
   </div>
 </div>
 
 <!-- Music -->
-<div class="modal-overlay hidden" id="musicModal">
+<div class="modal-overlay hidden" id="musicModal" dir="rtl">
   <div class="modal wide">
     <div class="m-title">🎵 موزیک</div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -436,62 +403,28 @@
   </div>
 </div>
 
-
-<!-- Audio Settings Modal -->
-<div class="modal-overlay hidden" id="audioSettingsModal">
+<!-- Audio Settings -->
+<div class="modal-overlay hidden" id="audioSettingsModal" dir="rtl">
   <div class="modal">
     <div class="m-title">🎧 تنظیمات صدا</div>
-    
-    <div class="section-label">🎤 میکروفون (ورودی)</div>
-    <select id="micSelect" class="auth-input" onchange="updateMicDevice()">
-      <option value="">در حال بارگذاری...</option>
-    </select>
-    
-    <div class="section-label">🔊 هدست / بلندگو (خروجی)</div>
-    <select id="speakerSelect" class="auth-input" onchange="updateSpeakerDevice()">
-      <option value="">در حال بارگذاری...</option>
-    </select>
-
+    <div class="section-label">🎤 میکروفون</div>
+    <select id="micSelect" class="auth-input" onchange="updateMicDevice()"><option value="">در حال بارگذاری...</option></select>
+    <div class="section-label">🔊 بلندگو</div>
+    <select id="speakerSelect" class="auth-input" onchange="updateSpeakerDevice()"><option value="">در حال بارگذاری...</option></select>
     <div class="section-label">🔉 تست میکروفون</div>
     <div class="mic-test-wrap">
       <button class="auth-btn sm" onclick="testMic()" id="micTestBtn">▶ شروع تست</button>
-      <div class="mic-meter-wrap">
-        <div id="micMeter" class="mic-meter"></div>
-      </div>
+      <div class="mic-meter-wrap"><div id="micMeter" class="mic-meter"></div></div>
       <span id="micTestLabel" style="font-size:12px;color:var(--muted)">میکروفون رو تست کن</span>
     </div>
-
     <div class="section-label">🎛 پردازش صدا</div>
     <div class="audio-toggle-list">
-      <label class="audio-toggle">
-        <div class="at-info">
-          <div class="at-title">🔇 نویز کنسلینگ</div>
-          <div class="at-sub">حذف صداهای محیطی (فن، کیبورد و...)</div>
-        </div>
-        <input type="checkbox" id="noiseCancelToggle" checked onchange="saveAudioToggles()">
-        <div class="at-switch"></div>
-      </label>
-      <label class="audio-toggle">
-        <div class="at-info">
-          <div class="at-title">🎚 تنظیم خودکار صدا</div>
-          <div class="at-sub">جلوگیری از خیلی بلند یا خیلی آرام شدن صدا</div>
-        </div>
-        <input type="checkbox" id="autoGainToggle" checked onchange="saveAudioToggles()">
-        <div class="at-switch"></div>
-      </label>
-      <label class="audio-toggle">
-        <div class="at-info">
-          <div class="at-title">🔁 حذف اکو</div>
-          <div class="at-sub">جلوگیری از اکو و بازتاب صدا</div>
-        </div>
-        <input type="checkbox" id="echoCancelToggle" checked onchange="saveAudioToggles()">
-        <div class="at-switch"></div>
-      </label>
+      <label class="audio-toggle"><div class="at-info"><div class="at-title">🔇 نویز کنسلینگ</div><div class="at-sub">حذف صداهای محیطی</div></div><input type="checkbox" id="noiseCancelToggle" checked onchange="saveAudioToggles()"><div class="at-switch"></div></label>
+      <label class="audio-toggle"><div class="at-info"><div class="at-title">🎚 تنظیم خودکار صدا</div><div class="at-sub">جلوگیری از خیلی بلند یا آرام</div></div><input type="checkbox" id="autoGainToggle" checked onchange="saveAudioToggles()"><div class="at-switch"></div></label>
+      <label class="audio-toggle"><div class="at-info"><div class="at-title">🔁 حذف اکو</div><div class="at-sub">جلوگیری از بازتاب صدا</div></div><input type="checkbox" id="echoCancelToggle" checked onchange="saveAudioToggles()"><div class="at-switch"></div></label>
     </div>
-
     <div class="section-label">🔈 تست بلندگو</div>
     <button class="auth-btn sm" onclick="testSpeaker()" style="width:100%;margin-bottom:12px">▶ پخش صدای تست</button>
-
     <div class="m-actions">
       <button class="auth-btn" onclick="saveAudioSettings()">💾 ذخیره</button>
       <button class="m-cancel" onclick="closeModal('audioSettingsModal')">لغو</button>
@@ -500,12 +433,10 @@
   </div>
 </div>
 
-
-<!-- Soundboard Modal -->
-<div class="modal-overlay hidden" id="soundboardModal">
+<!-- Soundboard -->
+<div class="modal-overlay hidden" id="soundboardModal" dir="rtl">
   <div class="modal wide">
     <div class="m-title">🎛 ساندبورد</div>
-    
     <div class="sb-upload-row">
       <input id="sbFileInput" type="file" accept="audio/*" multiple style="display:none" onchange="addSoundFiles(event)">
       <button class="auth-btn sm" onclick="document.getElementById('sbFileInput').click()">📁 آپلود صدا</button>
@@ -513,11 +444,8 @@
       <input id="sbUrlInput" class="auth-input" placeholder="یا لینک MP3" style="margin:0;flex:1">
       <button class="auth-btn sm" onclick="addSoundUrl()">＋</button>
     </div>
-
     <div id="soundboardGrid" class="sb-grid"></div>
-
     <div class="sb-info">💡 فایل‌های صوتی حداکثر ۶ ثانیه در ویس پخش میشن</div>
-    
     <button class="m-cancel" onclick="closeModal('soundboardModal')" style="width:100%;margin-top:8px">بستن</button>
     <button class="m-close" onclick="closeModal('soundboardModal')">✕</button>
   </div>
