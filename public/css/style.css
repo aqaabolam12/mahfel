@@ -636,3 +636,161 @@ body{font-family:'Vazirmatn',sans-serif;background:var(--bg-deep);color:var(--te
   content:'🖥'; position:absolute; bottom:-4px; right:-4px;
   font-size:14px; background:var(--bg-card); border-radius:50%;
 }
+/* ═══════════════════════════════════════════════════════════════════
+   GapHub — CSS PATCH
+   این رو در انتهای style.css اضافه کن
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Message Actions ──────────────────────────────────────────────── */
+.msg-group { position: relative; }
+.msg-group:hover .msg-actions { opacity: 1; }
+.msg-actions {
+  position: absolute; top: 4px; left: 8px;
+  display: flex; gap: 4px; opacity: 0; transition: .15s;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 6px;
+  box-shadow: 0 4px 16px #00000060;
+  z-index: 10;
+}
+.msg-act-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; padding: 2px 4px; border-radius: 4px;
+  color: var(--muted); transition: .1s;
+}
+.msg-act-btn:hover { background: var(--bg-hover); color: var(--text); }
+.msg-act-btn.danger:hover { background: rgba(239,68,68,.15); color: #f87171; }
+
+/* ─── Reactions ────────────────────────────────────────────────────── */
+.react-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; min-height: 4px; }
+.react-btn {
+  background: var(--bg-hover); border: 1px solid var(--border);
+  border-radius: 12px; padding: 2px 8px; font-size: 13px;
+  cursor: pointer; color: var(--text); transition: .15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.react-btn:hover { border-color: var(--accent); }
+.react-btn.mine { background: rgba(124,106,247,.2); border-color: var(--accent); }
+.react-picker-popup {
+  position: absolute; bottom: 100%; left: 0;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 8px; display: flex; flex-wrap: wrap;
+  gap: 4px; z-index: 100; box-shadow: 0 8px 32px #00000080;
+  animation: fadeIn .1s ease; max-width: 260px;
+}
+.react-picker-popup button {
+  font-size: 20px; background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: 6px; transition: .1s;
+}
+.react-picker-popup button:hover { background: var(--bg-hover); transform: scale(1.2); }
+
+/* ─── Reply ─────────────────────────────────────────────────────────── */
+.reply-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; background: var(--bg-hover);
+  border-radius: 8px; margin-bottom: 6px; font-size: 13px;
+  color: var(--muted); border-right: 3px solid var(--accent);
+}
+.reply-bar button {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 16px; padding: 0 4px;
+  margin-right: auto;
+}
+.reply-preview {
+  font-size: 12px; color: var(--muted); padding: 4px 8px;
+  background: var(--bg-hover); border-radius: 6px; margin-bottom: 4px;
+  border-right: 2px solid var(--accent); cursor: pointer;
+}
+.reply-preview:hover { color: var(--text); }
+.edited-tag { font-size: 10px; color: var(--muted); margin-right: 6px; font-style: italic; }
+
+/* ─── Markdown ─────────────────────────────────────────────────────── */
+.code-block {
+  background: #0d0d1a; border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 16px; margin: 8px 0;
+  overflow-x: auto; font-family: 'Courier New', monospace;
+  font-size: 13px; line-height: 1.5; direction: ltr; text-align: left;
+  color: #a9b7c6;
+}
+.inline-code {
+  background: rgba(124,106,247,.15); border: 1px solid rgba(124,106,247,.2);
+  border-radius: 4px; padding: 1px 6px; font-family: 'Courier New', monospace;
+  font-size: 13px; color: #c8a4f8; direction: ltr;
+}
+.quote-block {
+  border-right: 3px solid var(--muted); padding: 4px 12px;
+  color: var(--muted); margin: 4px 0; font-style: italic;
+}
+.spoiler { background: var(--muted); color: transparent; border-radius: 3px; cursor: pointer; transition: .2s; }
+.spoiler.revealed { color: var(--text); background: var(--bg-hover); }
+.msg-link { color: var(--accent); text-decoration: underline; }
+.msg-link:hover { opacity: .8; }
+.msg-img { max-width: 360px; max-height: 300px; border-radius: 8px; margin-top: 6px; cursor: pointer; display: block; }
+.mention { color: var(--accent); background: rgba(124,106,247,.12); border-radius: 4px; padding: 0 4px; cursor: pointer; font-weight: 600; }
+.mention:hover { background: rgba(124,106,247,.25); }
+.mention-me { background: rgba(245,158,11,.2); color: #fbbf24; }
+.file-attach { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-hover); border-radius: 8px; margin-top: 6px; border: 1px solid var(--border); }
+.file-icon { font-size: 20px; }
+.file-link { color: var(--accent); text-decoration: none; font-size: 14px; }
+.file-link:hover { text-decoration: underline; }
+
+/* ─── Search ────────────────────────────────────────────────────────── */
+.search-panel {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg-side); animation: fadeIn .15s ease;
+}
+.search-header { display: flex; gap: 8px; margin-bottom: 8px; }
+.search-input {
+  flex: 1; padding: 8px 12px; background: var(--bg-input);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: inherit; font-size: 14px; outline: none;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-results { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.search-empty { color: var(--muted); text-align: center; padding: 16px; font-size: 14px; }
+.search-item {
+  padding: 8px 12px; background: var(--bg-hover); border-radius: 8px;
+  cursor: pointer; transition: .1s; border: 1px solid transparent;
+}
+.search-item:hover { border-color: var(--accent); }
+.search-user { font-weight: 700; font-size: 13px; margin-left: 8px; }
+.search-time { font-size: 11px; color: var(--muted); }
+.search-text { font-size: 13px; color: var(--dim); margin-top: 3px; }
+.search-text mark { background: rgba(245,158,11,.3); color: var(--text); border-radius: 2px; }
+
+/* ─── Drag & Drop ──────────────────────────────────────────────────── */
+.chat-view.drag-over::after {
+  content: '📂 فایل رو اینجا رها کن';
+  position: absolute; inset: 0; background: rgba(124,106,247,.15);
+  border: 3px dashed var(--accent); border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: var(--accent);
+  z-index: 50; pointer-events: none; animation: pulse .8s infinite;
+}
+
+/* ─── Highlight scroll ────────────────────────────────────────────── */
+.msg-group.highlight { background: rgba(245,158,11,.1); border-radius: 8px; animation: highlightFade 2s ease; }
+@keyframes highlightFade { 0%{background:rgba(245,158,11,.2)} 100%{background:transparent} }
+
+/* ─── Voice Effect Selector ────────────────────────────────────────── */
+.voice-effect-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 12px; background: var(--bg-side);
+  border-bottom: 1px solid var(--border);
+}
+.voice-effect-btn {
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--bg-hover); color: var(--muted); cursor: pointer;
+  font-size: 12px; font-family: inherit; transition: .15s;
+}
+.voice-effect-btn:hover { border-color: var(--accent); color: var(--text); }
+.voice-effect-btn.active { background: rgba(124,106,247,.2); border-color: var(--accent); color: var(--accent); }
+
+/* ─── Theme Picker ─────────────────────────────────────────────────── */
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.theme-card {
+  padding: 10px 12px; background: var(--bg-hover); border: 1px solid var(--border);
+  border-radius: 10px; cursor: pointer; font-size: 13px; text-align: center;
+  transition: .15s; color: var(--text);
+}
+.theme-card:hover { border-color: var(--accent); background: rgba(124,106,247,.1); }
+.theme-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }

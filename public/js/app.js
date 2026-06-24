@@ -1854,4 +1854,681 @@ async function toggleCamera() {
       showToast('📷 دوربین روشن شد');
     } catch(e) { showToast('دسترسی به دوربین نبود'); }
   }
+}// ═══════════════════════════════════════════════════════════════════════
+//  GapHub — APP PATCH  v1
+//  این فایل رو در انتهای app.js اضافه کن
+//  (قبل از آخرین }) بند io.on)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── تم‌های جدید ──────────────────────────────────────────────────────
+const EXTRA_THEMES = {
+  light:    { label:'☀️ روشن',    vars:{ '--bg-deep':'#f0f2f5','--bg-side':'#e3e5e8','--bg-ch':'#ebedef','--bg-chat':'#ffffff','--bg-input':'#e3e5e8','--bg-card':'#ffffff','--bg-hover':'#d4d7dc','--accent':'#5865f2','--accent2':'#7289da','--accent-glow':'rgba(88,101,242,0.2)','--text':'#060607','--muted':'#72767d','--dim':'#4f5660','--border':'rgba(88,101,242,0.15)' }},
+  amoled:   { label:'🌑 AMOLED',   vars:{ '--bg-deep':'#000000','--bg-side':'#000000','--bg-ch':'#0a0a0a','--bg-chat':'#050505','--bg-input':'#111111','--bg-card':'#0d0d0d','--bg-hover':'#151515','--accent':'#7c6af7','--accent2':'#a855f7','--accent-glow':'rgba(124,106,247,0.3)','--text':'#ffffff','--muted':'#555','--dim':'#333','--border':'rgba(124,106,247,0.2)' }},
+  cyberpunk:{ label:'✨ Cyberpunk', vars:{ '--bg-deep':'#0a0014','--bg-side':'#0d001a','--bg-ch':'#0f0020','--bg-chat':'#0c001c','--bg-input':'#130026','--bg-card':'#160030','--bg-hover':'#1c0038','--accent':'#ff0099','--accent2':'#00ffff','--accent-glow':'rgba(255,0,153,0.3)','--text':'#f0e6ff','--muted':'#7c4dff','--dim':'#5a3d7a','--border':'rgba(255,0,153,0.2)' }},
+  ocean:    { label:'🌊 Ocean',     vars:{ '--bg-deep':'#0a0e1a','--bg-side':'#0d1220','--bg-ch':'#0f1628','--bg-chat':'#0c1322','--bg-input':'#0d1420','--bg-card':'#111828','--bg-hover':'#162030','--accent':'#0ea5e9','--accent2':'#38bdf8','--accent-glow':'rgba(14,165,233,0.3)','--text':'#e0f2fe','--muted':'#7dd3fc','--dim':'#38bdf8','--border':'rgba(14,165,233,0.15)' }},
+  forest:   { label:'🌲 Forest',    vars:{ '--bg-deep':'#0a100a','--bg-side':'#0d150d','--bg-ch':'#0f1a0f','--bg-chat':'#0c1612','--bg-input':'#0e1810','--bg-card':'#112014','--bg-hover':'#152618','--accent':'#22c55e','--accent2':'#4ade80','--accent-glow':'rgba(34,197,94,0.3)','--text':'#dcfce7','--muted':'#86efac','--dim':'#4ade80','--border':'rgba(34,197,94,0.15)' }},
+  sunset:   { label:'🌅 Sunset',    vars:{ '--bg-deep':'#12080a','--bg-side':'#180a0d','--bg-ch':'#1c0c10','--bg-chat':'#160b0e','--bg-input':'#1a0c10','--bg-card':'#200e14','--bg-hover':'#281018','--accent':'#f97316','--accent2':'#fb923c','--accent-glow':'rgba(249,115,22,0.3)','--text':'#fff7ed','--muted':'#fdba74','--dim':'#fb923c','--border':'rgba(249,115,22,0.15)' }},
+  frost:    { label:'❄️ Frost',     vars:{ '--bg-deep':'#0d1520','--bg-side':'#111c28','--bg-ch':'#142030','--bg-chat':'#0f1c2c','--bg-input':'#121e2a','--bg-card':'#162432','--bg-hover':'#1c2e40','--accent':'#7dd3fc','--accent2':'#bae6fd','--accent-glow':'rgba(125,211,252,0.25)','--text':'#f0f9ff','--muted':'#bae6fd','--dim':'#7dd3fc','--border':'rgba(125,211,252,0.12)' }},
+  galaxy:   { label:'🌌 Galaxy',    vars:{ '--bg-deep':'#04001a','--bg-side':'#060020','--bg-ch':'#080025','--bg-chat':'#05001e','--bg-input':'#0a0028','--bg-card':'#0c002e','--bg-hover':'#100038','--accent':'#a855f7','--accent2':'#c084fc','--accent-glow':'rgba(168,85,247,0.35)','--text':'#f5f3ff','--muted':'#c4b5fd','--dim':'#a78bfa','--border':'rgba(168,85,247,0.2)' }},
+  lava:     { label:'🔥 Lava',      vars:{ '--bg-deep':'#120400','--bg-side':'#180500','--bg-ch':'#1c0600','--bg-chat':'#150500','--bg-input':'#1a0600','--bg-card':'#200800','--bg-hover':'#280a00','--accent':'#ef4444','--accent2':'#f97316','--accent-glow':'rgba(239,68,68,0.35)','--text':'#fff7ed','--muted':'#fca5a5','--dim':'#f97316','--border':'rgba(239,68,68,0.2)' }},
+  gold:     { label:'🏆 Gold',      vars:{ '--bg-deep':'#0f0900','--bg-side':'#140c00','--bg-ch':'#181000','--bg-chat':'#120b00','--bg-input':'#160e00','--bg-card':'#1c1200','--bg-hover':'#241600','--accent':'#f59e0b','--accent2':'#fbbf24','--accent-glow':'rgba(245,158,11,0.35)','--text':'#fffbeb','--muted':'#fde68a','--dim':'#fbbf24','--border':'rgba(245,158,11,0.2)' }},
+};
+
+// وضعیت ری‌پلای
+let replyTo = null; // { id, username, text }
+// وضعیت ویرایش
+let editingMsgId = null;
+// وضعیت voice effect
+let currentVoiceEffect = 'none';
+let voiceEffectNodes = {}; // Web Audio nodes for effect
+
+// ─── تم‌های پیشرفته ───────────────────────────────────────────────────
+function applyExtraTheme(name) {
+  const theme = EXTRA_THEMES[name];
+  if (!theme) return;
+  const s = document.documentElement.style;
+  Object.entries(theme.vars).forEach(([k, v]) => s.setProperty(k, v));
+  // reset accent vars که THEMES اصلی ست کرده
+  s.setProperty('--accent', theme.vars['--accent']);
+  s.setProperty('--accent2', theme.vars['--accent2']);
+  s.setProperty('--accent-glow', theme.vars['--accent-glow']);
+  s.setProperty('--bg-deep', theme.vars['--bg-deep']);
+  s.setProperty('--bg-chat', theme.vars['--bg-chat']);
+  document.body.style.color = theme.vars['--text'];
+  localStorage.setItem('mtheme_extra', name);
+  localStorage.removeItem('mtheme'); // override تم اصلی
+  showToast(theme.label + ' فعال شد ✅');
+}
+
+function buildFullThemePicker() {
+  const container = document.getElementById('fullThemePicker');
+  if (!container) return;
+  // تم‌های داخلی
+  const baseThemes = [
+    {id:'purple',label:'🟣 بنفش'},
+    {id:'blue',  label:'🔵 آبی'},
+    {id:'green', label:'🟢 سبز'},
+    {id:'red',   label:'🔴 قرمز'},
+    {id:'pink',  label:'🩷 صورتی'},
+    {id:'dark',  label:'⬛ تیره'},
+  ];
+  const extraList = Object.entries(EXTRA_THEMES).map(([id,t]) => `
+    <div class="theme-card" onclick="applyExtraTheme('${id}')">${t.label}</div>
+  `).join('');
+  const baseList = baseThemes.map(t => `
+    <div class="theme-card" onclick="setTheme('${t.id}')">${t.label}</div>
+  `).join('');
+  container.innerHTML = `
+    <div class="theme-section-title">تم‌های پایه</div>
+    <div class="theme-grid">${baseList}</div>
+    <div class="theme-section-title" style="margin-top:16px">تم‌های ویژه</div>
+    <div class="theme-grid">${extraList}</div>
+  `;
+}
+
+// ─── Markdown renderer ────────────────────────────────────────────────
+function renderMarkdown(raw) {
+  if (!raw) return '';
+  let t = raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // Code block ```lang\ncode```
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_,lang,code) =>
+      `<pre class="code-block"><code class="lang-${lang||'txt'}">${code.trim()}</code></pre>`)
+    // Inline code `code`
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+    // Bold **text**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic *text*
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Underline __text__
+    .replace(/__(.+?)__/g, '<u>$1</u>')
+    // Strikethrough ~~text~~
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    // Spoiler ||text||
+    .replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
+    // Quote > text
+    .replace(/^&gt;\s(.+)$/gm, '<div class="quote-block">$1</div>')
+    // Link preview
+    .replace(/https?:\/\/[^\s<>"]+/g, url => {
+      const isImg = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+      if (isImg) return `<a href="${url}" target="_blank" rel="noopener"><img class="msg-img" src="${url}" loading="lazy" onerror="this.style.display='none'"></a>`;
+      return `<a href="${url}" target="_blank" rel="noopener" class="msg-link">${url}</a>`;
+    })
+    // Newline
+    .replace(/\n/g, '<br>');
+  return t;
+}
+
+// ─── Mention parser ───────────────────────────────────────────────────
+function renderMentions(html) {
+  return html.replace(/@(\w+)/g, (m, name) => {
+    const isMe = me && name.toLowerCase() === me.username.toLowerCase();
+    return `<span class="mention ${isMe ? 'mention-me' : ''}" onclick="openUserByName('${name}')">@${name}</span>`;
+  });
+}
+
+// ─── پیام کامل render ─────────────────────────────────────────────────
+function renderMsgContent(msg) {
+  let html = renderMarkdown(msg.text || '');
+  html = renderMentions(html);
+
+  // فایل / تصویر پیوست
+  if (msg.file) {
+    const { data, name, type } = msg.file;
+    if (type && type.startsWith('image/')) {
+      html += `<br><img class="msg-img" src="${data}" alt="${esc(name)}" loading="lazy" style="max-width:360px;max-height:300px;border-radius:8px;margin-top:6px;cursor:pointer" onclick="openImgModal('${data}')">`;
+    } else {
+      html += `<div class="file-attach"><span class="file-icon">📎</span><a href="${data}" download="${esc(name)}" class="file-link">${esc(name)}</a></div>`;
+    }
+  }
+  return html;
+}
+
+// ─── appendMessage پیشرفته (جایگزین نسخه قبلی) ───────────────────────
+const _origAppendMessage = window.appendMessage;
+window.appendMessage = function(msg, noScroll=false) {
+  const a = $('messagesArea');
+  const t = new Date(msg.time);
+  const ts = `${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
+  const av = msg.avatarUrl
+    ? `<img src="${msg.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : `<span>${msg.avatar||'?'}</span>`;
+
+  const roleTag = (() => {
+    const srv = myServers.find(s => s.id === currentServerId);
+    if (!srv) return '';
+    const member = serverMembers[currentServerId]?.find(m => m.id === msg.userId);
+    if (!member) return '';
+    const roles = (serverRoles[currentServerId]||[]).filter(r => member.roles?.includes(r.id));
+    return roles.map(r => `<span class="role-tag" style="background:${r.color}22;color:${r.color};border-color:${r.color}44">${r.name}</span>`).join('');
+  })();
+
+  const replyBlock = msg.replyTo
+    ? `<div class="reply-preview" onclick="scrollToMsg('${msg.replyTo.id}')">↩ <strong>${esc(msg.replyTo.username)}</strong>: ${esc((msg.replyTo.text||'').slice(0,60))}</div>`
+    : '';
+
+  const editedTag = msg.edited ? `<span class="edited-tag">(ویرایش شده)</span>` : '';
+
+  const reactBar = buildReactBar(msg);
+
+  const isMe = msg.userId === me?.id;
+  const canDelete = isMe || ['owner','admin','mod'].includes(myServerRole);
+
+  const div = document.createElement('div');
+  div.className = 'msg-group';
+  div.id = `msg-${msg.id}`;
+  div.dataset.msgId = msg.id;
+  div.innerHTML = `
+    <div class="msg-avatar" style="background:linear-gradient(135deg,${msg.color},${msg.color}cc)" onclick="openUserProfile('${msg.userId}')">${av}</div>
+    <div class="msg-body">
+      ${replyBlock}
+      <div class="msg-header">
+        <span class="msg-uname" style="color:${msg.color}" onclick="openUserProfile('${msg.userId}')">${esc(msg.username)}</span>
+        ${roleTag}
+        <span class="msg-time">${ts}</span>
+        ${editedTag}
+      </div>
+      <div class="msg-text" id="msgtext-${msg.id}">${renderMsgContent(msg)}</div>
+      ${reactBar}
+    </div>
+    <div class="msg-actions">
+      <button class="msg-act-btn" title="ری‌اکشن" onclick="toggleReactPicker('${msg.id}')">😀</button>
+      <button class="msg-act-btn" title="ریپلای" onclick="setReply('${msg.id}','${esc(msg.username)}','${esc((msg.text||'').slice(0,60))}')">↩</button>
+      ${isMe ? `<button class="msg-act-btn" title="ویرایش" onclick="startEdit('${msg.id}')">✏️</button>` : ''}
+      ${canDelete ? `<button class="msg-act-btn danger" title="حذف" onclick="deleteMsg('${msg.id}','${currentChannelId}')">🗑️</button>` : ''}
+    </div>`;
+
+  a.appendChild(div);
+  if (!noScroll) a.scrollTop = a.scrollHeight;
+};
+
+function buildReactBar(msg) {
+  if (!msg.reactions || !Object.keys(msg.reactions).length) return '<div class="react-bar" id="rbar-'+msg.id+'"></div>';
+  const btns = Object.entries(msg.reactions).map(([emoji, users]) => {
+    const isMine = users.includes(me?.id);
+    return `<button class="react-btn ${isMine?'mine':''}" onclick="sendReact('${msg.id}','${emoji}')">${emoji} ${users.length}</button>`;
+  }).join('');
+  return `<div class="react-bar" id="rbar-${msg.id}">${btns}</div>`;
+}
+
+// ─── Socket events جدید ───────────────────────────────────────────────
+function patchSocketEvents() {
+  if (!socket) return setTimeout(patchSocketEvents, 500);
+
+  socket.on('message_deleted', ({ channelId, msgId }) => {
+    if (channelId !== currentChannelId) return;
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) { el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }
+  });
+
+  socket.on('message_edited', ({ channelId, msgId, newText, edited }) => {
+    if (channelId !== currentChannelId) return;
+    const el = document.getElementById(`msgtext-${msgId}`);
+    if (el) {
+      el.innerHTML = renderMsgContent({ text: newText, edited });
+      const header = el.closest('.msg-body')?.querySelector('.msg-header');
+      if (header && edited && !header.querySelector('.edited-tag')) {
+        header.insertAdjacentHTML('beforeend','<span class="edited-tag">(ویرایش شده)</span>');
+      }
+    }
+  });
+
+  socket.on('reaction_update', ({ channelId, msgId, reactions }) => {
+    if (channelId !== currentChannelId) return;
+    const bar = document.getElementById(`rbar-${msgId}`);
+    if (!bar) return;
+    if (!reactions || !Object.keys(reactions).length) { bar.innerHTML=''; return; }
+    bar.innerHTML = Object.entries(reactions).map(([emoji,users]) => {
+      const isMine = users.includes(me?.id);
+      return `<button class="react-btn ${isMine?'mine':''}" onclick="sendReact('${msgId}','${emoji}')">${emoji} ${users.length}</button>`;
+    }).join('');
+  });
+
+  socket.on('search_results', ({ query, results }) => {
+    renderSearchResults(query, results);
+  });
+}
+
+// ─── ری‌اکشن ──────────────────────────────────────────────────────────
+const QUICK_REACTS = ['👍','❤️','😂','😮','😢','😡','🎉','🔥','💯','👀','💎','🚀'];
+let reactPickerFor = null;
+
+function toggleReactPicker(msgId) {
+  const existing = document.getElementById('reactPickerPopup');
+  if (existing && reactPickerFor === msgId) { existing.remove(); reactPickerFor = null; return; }
+  if (existing) existing.remove();
+  reactPickerFor = msgId;
+  const msgEl = document.getElementById(`msg-${msgId}`);
+  if (!msgEl) return;
+  const popup = document.createElement('div');
+  popup.id = 'reactPickerPopup';
+  popup.className = 'react-picker-popup';
+  popup.innerHTML = QUICK_REACTS.map(e =>
+    `<button onclick="sendReact('${msgId}','${e}');closeReactPicker()">${e}</button>`
+  ).join('');
+  msgEl.appendChild(popup);
+  setTimeout(() => { document.addEventListener('click', closeReactPickerOutside, {once:true}); }, 100);
+}
+function closeReactPicker() {
+  document.getElementById('reactPickerPopup')?.remove();
+  reactPickerFor = null;
+}
+function closeReactPickerOutside(e) {
+  if (!e.target.closest('#reactPickerPopup')) closeReactPicker();
+}
+function sendReact(msgId, emoji) {
+  socket?.emit('react', { channelId: currentChannelId, msgId, emoji });
+}
+
+// ─── Reply ────────────────────────────────────────────────────────────
+function setReply(id, username, text) {
+  replyTo = { id, username, text };
+  const bar = document.getElementById('replyBar');
+  if (bar) {
+    bar.innerHTML = `<span>↩ ریپلای به <strong>${username}</strong>: ${text}</span><button onclick="clearReply()">✕</button>`;
+    bar.classList.remove('hidden');
+  }
+  $('msgInput')?.focus();
+}
+function clearReply() {
+  replyTo = null;
+  const bar = document.getElementById('replyBar');
+  if (bar) bar.classList.add('hidden');
+}
+
+// ─── Edit message ─────────────────────────────────────────────────────
+function startEdit(msgId) {
+  const textEl = document.getElementById(`msgtext-${msgId}`);
+  if (!textEl) return;
+  const original = textEl.dataset.original || textEl.innerText;
+  editingMsgId = msgId;
+  const inp = $('msgInput');
+  if (inp) {
+    inp.value = original;
+    inp.dataset.editMode = '1';
+    inp.focus();
+    const bar = document.getElementById('replyBar');
+    if (bar) {
+      bar.innerHTML = `<span>✏️ در حال ویرایش پیام</span><button onclick="cancelEdit()">✕</button>`;
+      bar.classList.remove('hidden');
+    }
+  }
+}
+function cancelEdit() {
+  editingMsgId = null;
+  const inp = $('msgInput');
+  if (inp) { inp.value=''; delete inp.dataset.editMode; }
+  clearReply();
+}
+
+// ─── جایگزینی sendMessage برای پشتیبانی reply + edit ─────────────────
+const _origSendMessage = window.sendMessage;
+window.sendMessage = function() {
+  const inp = $('msgInput');
+  const text = inp?.value.trim();
+  if (!text || !socket) return;
+
+  if (inp.dataset.editMode && editingMsgId) {
+    socket.emit('edit_message', { channelId: currentChannelId, msgId: editingMsgId, newText: text });
+    cancelEdit();
+    return;
+  }
+
+  const payload = { channelId: currentChannelId, text };
+  if (replyTo) { payload.replyTo = replyTo; }
+  socket.emit('message', payload);
+  inp.value = '';
+  clearReply();
+};
+
+// ─── حذف پیام ────────────────────────────────────────────────────────
+function deleteMsg(msgId, channelId) {
+  socket?.emit('delete_message', { channelId, msgId });
+}
+
+// ─── آپلود فایل در چت ────────────────────────────────────────────────
+function initFileDrop() {
+  const chatView = document.getElementById('chatView');
+  if (!chatView) return;
+
+  chatView.addEventListener('dragover', e => { e.preventDefault(); chatView.classList.add('drag-over'); });
+  chatView.addEventListener('dragleave', () => chatView.classList.remove('drag-over'));
+  chatView.addEventListener('drop', e => {
+    e.preventDefault();
+    chatView.classList.remove('drag-over');
+    const files = e.dataTransfer?.files;
+    if (files?.length) processFileUpload(files[0]);
+  });
+
+  // دکمه آپلود
+  const btn = document.getElementById('fileUploadBtn');
+  const input = document.getElementById('chatFileInput');
+  if (btn && input) {
+    btn.onclick = () => input.click();
+    input.onchange = e => { if (e.target.files[0]) processFileUpload(e.target.files[0]); };
+  }
+}
+
+function processFileUpload(file) {
+  if (file.size > 5_000_000) { showToast('⚠️ فایل بیشتر از 5MB نمی‌تونی بفرستی'); return; }
+  showToast('📤 در حال آپلود...');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    socket?.emit('file_message', {
+      channelId: currentChannelId,
+      fileData: ev.target.result,
+      fileName: file.name,
+      fileType: file.type,
+      text: ''
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── باز کردن تصویر در مدال ──────────────────────────────────────────
+function openImgModal(src) {
+  let modal = document.getElementById('imgViewModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'imgViewModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000c;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+    modal.onclick = () => modal.remove();
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 0 60px #000">`;
+  document.body.appendChild(modal);
+}
+
+// ─── جستجوی پیام‌ها ──────────────────────────────────────────────────
+let searchOpen = false;
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  const panel = document.getElementById('searchPanel');
+  if (!panel) { injectSearchPanel(); return; }
+  panel.classList.toggle('hidden', !searchOpen);
+  if (searchOpen) document.getElementById('searchInput')?.focus();
+}
+function injectSearchPanel() {
+  const panel = document.createElement('div');
+  panel.id = 'searchPanel';
+  panel.className = 'search-panel';
+  panel.innerHTML = `
+    <div class="search-header">
+      <input id="searchInput" class="search-input" placeholder="🔍 جستجو در پیام‌ها..." onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="msg-act-btn" onclick="doSearch()">جستجو</button>
+      <button class="msg-act-btn" onclick="toggleSearch()">✕</button>
+    </div>
+    <div id="searchResults" class="search-results"></div>`;
+  const chatView = document.getElementById('chatView');
+  if (chatView) chatView.insertBefore(panel, chatView.firstChild);
+}
+function doSearch() {
+  const q = document.getElementById('searchInput')?.value.trim();
+  if (!q) return;
+  socket?.emit('search_messages', { channelId: currentChannelId, query: q });
+}
+function renderSearchResults(query, results) {
+  const el = document.getElementById('searchResults');
+  if (!el) return;
+  if (!results.length) { el.innerHTML = `<div class="search-empty">نتیجه‌ای پیدا نشد برای «${esc(query)}»</div>`; return; }
+  el.innerHTML = results.map(m => {
+    const t = new Date(m.time);
+    const ts = `${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')} ${t.toLocaleDateString('fa')}`;
+    const highlighted = (m.text||'').replace(new RegExp(esc(query),'gi'), s => `<mark>${s}</mark>`);
+    return `<div class="search-item" onclick="scrollToMsg('${m.id}')">
+      <span class="search-user" style="color:${m.color}">${esc(m.username)}</span>
+      <span class="search-time">${ts}</span>
+      <div class="search-text">${highlighted}</div>
+    </div>`;
+  }).join('');
+}
+function scrollToMsg(msgId) {
+  const el = document.getElementById(`msg-${msgId}`);
+  if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('highlight'); setTimeout(()=>el.classList.remove('highlight'),2000); }
+}
+
+// ─── Voice Effect با Web Audio API ───────────────────────────────────
+// افکت‌ها کاملاً روی audio stream اعمال میشن
+const VOICE_EFFECTS = {
+  none:     { label: '🎤 معمولی' },
+  robot:    { label: '🤖 ربات' },
+  deep:     { label: '🎙 بم' },
+  high:     { label: '🐭 زیر (موش)' },
+  cave:     { label: '🏔 غار' },
+  friend:   { label: '👥 مثل دوستت' },
+  radio:    { label: '📻 رادیو' },
+};
+
+let effectAudioCtx = null;
+let effectSourceNode = null;
+let effectDestStream = null;
+
+async function applyVoiceEffect(effectName) {
+  currentVoiceEffect = effectName;
+  localStorage.setItem('gaphub_voice_effect', effectName);
+  socket?.emit('voice_effect', { channelId: currentVoiceId, effect: effectName });
+
+  if (!localStream) { showToast('ابتدا وارد ویس شو'); return; }
+
+  // بستن context قبلی
+  if (effectAudioCtx) { try { effectAudioCtx.close(); } catch(e){} effectAudioCtx = null; effectSourceNode = null; }
+
+  if (effectName === 'none') {
+    // برگشت به stream اصلی
+    applyStreamToPeers(localStream);
+    showToast('🎤 بدون افکت');
+    return;
+  }
+
+  try {
+    effectAudioCtx = new AudioContext({ sampleRate: 44100 });
+    effectSourceNode = effectAudioCtx.createMediaStreamSource(localStream);
+
+    let lastNode = effectSourceNode;
+
+    if (effectName === 'deep' || effectName === 'friend') {
+      // Pitch shift پایین‌تر = صدای بم‌تر
+      // از bitcrusher + بایاس برای صدای بم شبیه‌سازی می‌کنیم
+      const gainNode = effectAudioCtx.createGain();
+      gainNode.gain.value = effectName === 'deep' ? 1.4 : 1.1;
+      const biquad = effectAudioCtx.createBiquadFilter();
+      biquad.type = 'lowshelf';
+      biquad.frequency.value = effectName === 'deep' ? 200 : 300;
+      biquad.gain.value = effectName === 'deep' ? 12 : 6;
+      lastNode.connect(biquad);
+      biquad.connect(gainNode);
+      lastNode = gainNode;
+    }
+
+    if (effectName === 'high') {
+      const biquad = effectAudioCtx.createBiquadFilter();
+      biquad.type = 'highshelf';
+      biquad.frequency.value = 2000;
+      biquad.gain.value = 15;
+      lastNode.connect(biquad);
+      lastNode = biquad;
+    }
+
+    if (effectName === 'robot') {
+      // Distortion + ring modulator effect
+      const dist = effectAudioCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for(let i=0;i<256;i++) { const x=i*2/256-1; curve[i]=x<0?-1:1; }
+      dist.curve = curve;
+      dist.oversample = '4x';
+      const gain = effectAudioCtx.createGain();
+      gain.gain.value = 0.3;
+      lastNode.connect(dist);
+      dist.connect(gain);
+      lastNode = gain;
+    }
+
+    if (effectName === 'cave') {
+      // Reverb effect با convolver
+      const convolver = effectAudioCtx.createConvolver();
+      const bufLen = effectAudioCtx.sampleRate * 2;
+      const buf = effectAudioCtx.createBuffer(2, bufLen, effectAudioCtx.sampleRate);
+      for(let c=0;c<2;c++) {
+        const d = buf.getChannelData(c);
+        for(let i=0;i<bufLen;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/bufLen, 2);
+      }
+      convolver.buffer = buf;
+      const wetGain = effectAudioCtx.createGain(); wetGain.gain.value = 0.6;
+      const dryGain = effectAudioCtx.createGain(); dryGain.gain.value = 0.7;
+      lastNode.connect(convolver);
+      convolver.connect(wetGain);
+      lastNode.connect(dryGain);
+      const merger = effectAudioCtx.createGain();
+      wetGain.connect(merger);
+      dryGain.connect(merger);
+      lastNode = merger;
+    }
+
+    if (effectName === 'radio') {
+      // Band-pass filter برای صدای رادیویی
+      const bp = effectAudioCtx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1800;
+      bp.Q.value = 0.7;
+      const dist = effectAudioCtx.createWaveShaper();
+      const c = new Float32Array(256);
+      for(let i=0;i<256;i++){const x=i*2/256-1;c[i]=Math.tanh(x*3);}
+      dist.curve = c;
+      lastNode.connect(bp);
+      bp.connect(dist);
+      lastNode = dist;
+    }
+
+    // خروجی به stream
+    const dest = effectAudioCtx.createMediaStreamDestination();
+    lastNode.connect(dest);
+    effectDestStream = dest.stream;
+
+    // stream جدید رو به peer connections بده
+    applyStreamToPeers(effectDestStream);
+    showToast(VOICE_EFFECTS[effectName]?.label + ' فعال شد');
+  } catch(e) {
+    console.error('Voice effect error:', e);
+    showToast('⚠️ خطا در اعمال افکت');
+  }
+}
+
+function applyStreamToPeers(stream) {
+  // track های جدید رو جایگزین track های قبلی توی peer connections می‌کنیم
+  Object.values(peerConnections).forEach(pc => {
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) return;
+    const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
+    if (sender) sender.replaceTrack(audioTrack).catch(()=>{});
+  });
+}
+
+function buildVoiceEffectSelector() {
+  const container = document.getElementById('voiceEffectSelector');
+  if (!container) return;
+  const cur = localStorage.getItem('gaphub_voice_effect') || 'none';
+  container.innerHTML = Object.entries(VOICE_EFFECTS).map(([id, v]) =>
+    `<button class="voice-effect-btn ${cur===id?'active':''}" onclick="applyVoiceEffect('${id}');updateVoiceEffectUI('${id}')">${v.label}</button>`
+  ).join('');
+}
+function updateVoiceEffectUI(effectName) {
+  document.querySelectorAll('.voice-effect-btn').forEach((b,i) => {
+    b.classList.toggle('active', Object.keys(VOICE_EFFECTS)[i] === effectName);
+  });
+}
+
+// ─── inject HTML elements جدید ───────────────────────────────────────
+function injectPatchedHTML() {
+  // Reply bar بالای input
+  const inputArea = document.querySelector('.input-area');
+  if (inputArea && !document.getElementById('replyBar')) {
+    const bar = document.createElement('div');
+    bar.id = 'replyBar';
+    bar.className = 'reply-bar hidden';
+    inputArea.insertBefore(bar, inputArea.firstChild);
+  }
+
+  // دکمه‌های جدید در input area
+  if (inputArea && !document.getElementById('fileUploadBtn')) {
+    const fileBtn = document.createElement('button');
+    fileBtn.id = 'fileUploadBtn';
+    fileBtn.className = 'icon-btn';
+    fileBtn.title = 'آپلود فایل';
+    fileBtn.textContent = '📎';
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'chatFileInput';
+    fileInput.accept = 'image/*,video/*,audio/*,.pdf,.zip,.txt,.doc,.docx';
+    fileInput.style.display = 'none';
+    inputArea.insertBefore(fileBtn, inputArea.querySelector('.msg-input'));
+    inputArea.appendChild(fileInput);
+
+    // دکمه جستجو
+    const searchBtn = document.createElement('button');
+    searchBtn.className = 'icon-btn';
+    searchBtn.title = 'جستجو';
+    searchBtn.textContent = '🔍';
+    searchBtn.onclick = toggleSearch;
+    inputArea.insertBefore(searchBtn, inputArea.querySelector('.send-btn'));
+  }
+
+  // Voice effect selector در ویس ویو
+  const vcPanel = document.getElementById('vcPanel') || document.querySelector('.vc-bottom-bar');
+  if (vcPanel && !document.getElementById('voiceEffectSelector')) {
+    const sel = document.createElement('div');
+    sel.id = 'voiceEffectSelector';
+    sel.className = 'voice-effect-row';
+    vcPanel.insertBefore(sel, vcPanel.firstChild);
+    buildVoiceEffectSelector();
+  }
+
+  // Theme picker modal
+  if (!document.getElementById('fullThemeModal')) {
+    const modal = document.createElement('div');
+    modal.id = 'fullThemeModal';
+    modal.className = 'modal-overlay hidden';
+    modal.dir = 'rtl';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:480px">
+        <div class="m-title">🎨 انتخاب تم</div>
+        <div id="fullThemePicker"></div>
+        <button class="auth-btn" onclick="closeModal('fullThemeModal')" style="margin-top:16px">بستن</button>
+      </div>`;
+    document.body.appendChild(modal);
+    buildFullThemePicker();
+  }
+}
+
+// ─── scroll to msg ────────────────────────────────────────────────────
+function openUserByName(username) {
+  const user = Object.values(serverMembers[currentServerId]||{}).flat().find(m => m.username?.toLowerCase() === username.toLowerCase());
+  if (user) openUserProfile(user.id);
+}
+
+// ─── Init همه چیز ─────────────────────────────────────────────────────
+function initPatch() {
+  injectPatchedHTML();
+  initFileDrop();
+  patchSocketEvents();
+  buildVoiceEffectSelector();
+
+  // بارگذاری تم ذخیره‌شده
+  const savedExtra = localStorage.getItem('mtheme_extra');
+  if (savedExtra) applyExtraTheme(savedExtra);
+
+  // بارگذاری voice effect ذخیره‌شده
+  currentVoiceEffect = localStorage.getItem('gaphub_voice_effect') || 'none';
+}
+
+// ─── اضافه کردن دکمه باز کردن تم modal به settings ───────────────────
+function openThemeModal() {
+  buildFullThemePicker();
+  openModal('fullThemeModal');
+}
+
+// شروع بعد از load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(initPatch, 800));
+} else {
+  setTimeout(initPatch, 800);
 }
