@@ -2532,3 +2532,4 @@ if (document.readyState === 'loading') {
 } else {
   setTimeout(initPatch, 800);
 }
+// cache bust Wed 06/24/2026 12:42:27.95 
