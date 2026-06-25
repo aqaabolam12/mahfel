@@ -1,0 +1,370 @@
+/* ═══════════════════════════════════════════════════════════════
+   GapHub — Voice Channel UI  (voice_ui.css)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root ────────────────────────────────────────────────────── */
+.vc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d16;
+  color: #e0e0f0;
+  font-family: inherit;
+  overflow: hidden;
+}
+.vc-root.hidden { display: none !important; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+.vc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #1a1a2e;
+  background: #0d0d16;
+  flex-shrink: 0;
+}
+.vc-header-icon { font-size: 18px; }
+.vc-header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  flex: 1;
+}
+.vc-header-count {
+  font-size: 12px;
+  color: #6b7280;
+  background: #1a1a2e;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.vc-header-actions { display: flex; gap: 6px; }
+.vc-icon-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.vc-icon-btn:hover { background: #1e1e30; color: #c5c7ef; }
+
+/* ── Body ────────────────────────────────────────────────────── */
+.vc-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ── Participants strip ───────────────────────────────────────── */
+.vc-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #0d0d16;
+  border-bottom: 1px solid #141428;
+  flex-shrink: 0;
+}
+
+/* Card */
+.vc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #13132a;
+  border: 1.5px solid #1e1e38;
+  border-radius: 14px;
+  padding: 14px 16px 10px;
+  width: 140px;
+  position: relative;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: default;
+}
+.vc-card:hover { border-color: #2a2a50; }
+
+/* Speaking highlight */
+.vc-card.speaking,
+.vc-card:has(.vc-avatar.speaking) {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, .18);
+}
+
+/* Avatar */
+.vc-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .2s;
+  flex-shrink: 0;
+}
+.vc-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover; border-radius: 50%;
+}
+.vc-avatar.speaking {
+  box-shadow: 0 0 0 3px #4ade80, 0 0 16px rgba(74,222,128,.35);
+}
+
+/* Mic indicator dot */
+.vc-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #3ba55d;
+  border: 2px solid #13132a;
+  transition: background .2s;
+}
+.vc-avatar.muted::after { background: #f23f42; }
+
+/* Share badge on card */
+.vc-share-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: #5865f2;
+  color: #fff;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* Name */
+.vc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d0d2f0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+.vc-me-tag {
+  font-size: 10px;
+  color: #5865f2;
+  background: rgba(88,101,242,.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+/* Volume row */
+.vc-vol-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.lmute-btn {
+  background: none; border: none;
+  cursor: pointer; font-size: 14px;
+  padding: 0; width: 20px;
+  opacity: .7; transition: opacity .15s;
+}
+.lmute-btn:hover { opacity: 1; }
+.lmute-btn.muted { opacity: 1; }
+.vol-slider {
+  flex: 1;
+  height: 3px;
+  accent-color: #5865f2;
+  cursor: pointer;
+}
+.vol-lbl {
+  font-size: 10px;
+  color: #6b7280;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ── Screen share area ───────────────────────────────────────── */
+.vc-screen-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a12;
+  border-radius: 12px;
+  margin: 0 14px 14px;
+  overflow: hidden;
+  border: 1px solid #1e1e38;
+  min-height: 0;
+}
+.vc-screen-area.hidden { display: none; }
+
+.vc-screen-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(10,10,20,.7);
+  border-bottom: 1px solid #1a1a2e;
+  font-size: 13px;
+  color: #9ca3c4;
+  flex-shrink: 0;
+}
+.vc-screen-label svg { opacity: .6; flex-shrink: 0; }
+.vc-screen-label span { flex: 1; font-weight: 500; }
+
+.vc-screen-badges {
+  display: flex;
+  gap: 4px;
+}
+.vc-screen-pin,
+.vc-screen-fullscreen,
+.vc-screen-more {
+  background: rgba(255,255,255,.06);
+  border: none;
+  color: #9ca3c4;
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.vc-screen-pin:hover,
+.vc-screen-fullscreen:hover,
+.vc-screen-more:hover { background: rgba(255,255,255,.12); color: #fff; }
+.vc-screen-pin.active { color: #5865f2; background: rgba(88,101,242,.18); }
+
+.vc-screen-video-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #08080f;
+  min-height: 0;
+}
+.vc-screen-video-wrap video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.vc-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #4b5563;
+}
+.vc-empty.hidden { display: none; }
+.vc-empty-icon { font-size: 48px; opacity: .4; }
+.vc-empty-text { font-size: 14px; }
+
+/* ── Bottom bar ──────────────────────────────────────────────── */
+.vc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 24px 18px;
+  background: #0d0d16;
+  border-top: 1px solid #141428;
+  flex-shrink: 0;
+}
+
+.vc-bar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: #181830;
+  border: 1.5px solid #1e1e38;
+  color: #c0c2e0;
+  cursor: pointer;
+  width: 72px; height: 72px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
+  justify-content: center;
+}
+.vc-bar-btn:hover {
+  background: #1e1e38;
+  border-color: #2a2a50;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.vc-bar-btn:active { transform: translateY(0); }
+
+.vc-bar-btn.muted {
+  background: rgba(242,63,66,.12);
+  border-color: rgba(242,63,66,.3);
+  color: #f23f42;
+}
+
+/* Share button — active state */
+.vc-btn-share.sharing {
+  background: rgba(88,101,242,.15);
+  border-color: #5865f2;
+  color: #818cf8;
+}
+.vc-btn-share .vc-btn-label { content: 'اشتراک'; }
+
+/* Leave button */
+.vc-btn-leave {
+  background: #f23f42;
+  border-color: #f23f42;
+  color: #fff;
+}
+.vc-btn-leave:hover {
+  background: #e02d30;
+  border-color: #e02d30;
+  color: #fff;
+}
+
+.vc-btn-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.vc-btn-icon { display: block; flex-shrink: 0; }
+.hidden { display: none !important; }
+
+/* ── Waveform animation (speaking card decoration) ───────────── */
+@keyframes vcWave {
+  0%, 100% { height: 4px; }
+  50%       { height: 14px; }
+}
+.vc-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+  margin-top: 2px;
+}
+.vc-wave span {
+  width: 3px;
+  background: #4ade80;
+  border-radius: 2px;
+  animation: vcWave 1s ease-in-out infinite;
+}
+.vc-wave span:nth-child(2) { animation-delay: .15s; }
+.vc-wave span:nth-child(3) { animation-delay: .3s; }
+.vc-wave span:nth-child(4) { animation-delay: .15s; }
+.vc-wave span:nth-child(5) { animation-delay: 0s; }
+
+/* ── Responsive tweaks ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .vc-card { width: 110px; padding: 10px 10px 8px; }
+  .vc-avatar { width: 56px; height: 56px; font-size: 22px; }
+  .vc-bar-btn { width: 60px; height: 60px; border-radius: 14px; }
+  .vc-screen-area { margin: 0 8px 8px; }
+}
